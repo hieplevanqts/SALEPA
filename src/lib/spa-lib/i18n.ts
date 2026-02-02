@@ -760,6 +760,7 @@ export const translations = {
       },
       
       // Customer Detail Tabs
+      summary: 'Tổng quan',
       overview: 'Overview',
       purchases: 'Purchase History',
       treatments: 'Treatments',
@@ -1609,6 +1610,7 @@ export const translations = {
       },
       
       // Customer Detail Tabs
+      summary: 'Summary',
       overview: 'Overview',
       purchases: 'Purchase History',
       treatments: 'Treatments',

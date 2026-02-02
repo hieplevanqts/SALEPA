@@ -29,7 +29,6 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
     createAppointment, 
     updateAppointment, 
     deleteAppointment,
-    getPackageForService,
     usePackageSession,
     returnPackageSession,
     isTechnicianBusy,
@@ -81,6 +80,8 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
       productName: string;
       productType: 'product' | 'service' | 'treatment';
       quantity: number;
+      price?: number;
+      duration?: number;
       technicianIds: string[]; // ⭐ Changed to array
       bedId?: string; // ⭐ NEW: Bed ID for this service (optional)
       bedName?: string; // ⭐ NEW: Bed name for this service (optional)
@@ -595,7 +596,7 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
           productName: item.productName,
           productType: item.productType,
           quantity: item.quantity,
-          technicianIds: item.productType === 'service' || item.productType === 'treatment' ? [] : [],
+          technicianIds: [],
           startTime: itemStartTime, // ⭐ Auto-calculated
           endTime: itemEndTime,     // ⭐ Auto-calculated
           useTreatmentPackage: true,
@@ -631,14 +632,26 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
       return;
     }
     
+    const startTime = calculateEndTime();
+    const duration = product.duration || 0;
+    const endTime =
+      product.productType === 'service' || product.productType === 'treatment'
+        ? calculateTimeEnd(startTime, duration)
+        : startTime;
+
     const newService = {
       instanceId: Date.now().toString() + Math.random(),
       productId: serviceId,
       productName: product.name,
-      technicianId: '',
+      productType: product.productType ?? 'service',
+      quantity: 1,
+      technicianIds: [],
+      startTime,
+      endTime,
       useTreatmentPackage: true,
       treatmentPackageId: packageId,
       treatmentPackageName: packageName,
+      numberOfSessionsToUse: 1,
     };
     
     setFormData({
@@ -658,76 +671,10 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
     ).length;
   };
 
-  // NEW: Calculate package usage summary
-  const calculatePackageUsage = () => {
-    const usage: Record<string, {
-      packageId: string;
-      packageName: string;
-      count: number;
-      remainingSessions: number;
-    }> = {};
-    
-    formData.services.forEach(service => {
-      if (service.useTreatmentPackage && service.treatmentPackageId) {
-        if (!usage[service.treatmentPackageId]) {
-          const pkg = customerTreatmentPackages.find(
-            p => p.id === service.treatmentPackageId
-          );
-          usage[service.treatmentPackageId] = {
-            packageId: service.treatmentPackageId,
-            packageName: service.treatmentPackageName || pkg?.treatmentName || "",
-            count: 0,
-            remainingSessions: pkg?.remainingSessions || 0,
-          };
-        }
-        usage[service.treatmentPackageId].count++;
-      }
-    });
-    
-    return Object.values(usage);
-  };
-
-  // NEW: Validate package usage before saving
-  const validatePackageUsage = () => {
-    const packageUsage = calculatePackageUsage();
-    
-    for (const usage of packageUsage) {
-      if (usage.count > usage.remainingSessions) {
-        toast.error(
-          `Gói "${usage.packageName}" chỉ còn ${usage.remainingSessions} buổi, không thể sử dụng ${usage.count} buổi!`
-        );
-        return false;
-      }
-    }
-    
-    return true;
-  };
-
-
-
   const handleRemoveService = (index: number) => {
     setFormData({
       ...formData,
       services: formData.services.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleUpdateService = (index: number, productId: string) => {
-    const newServices = [...formData.services];
-    const product = products.find(p => p.id === productId);
-    
-    newServices[index] = { 
-      ...newServices[index],
-      productId,
-      productName: product?.name,
-      useTreatmentPackage: false,
-      treatmentPackageId: undefined,
-      treatmentPackageName: undefined,
-    };
-    
-    setFormData({
-      ...formData,
-      services: newServices,
     });
   };
 
@@ -743,15 +690,6 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
       newServices[index].technicianIds = currentIds.filter(id => id !== technicianId);
     }
     
-    setFormData({
-      ...formData,
-      services: newServices,
-    });
-  };
-
-  const handleUpdateNumberOfSessions = (index: number, numberOfSessions: number) => {
-    const newServices = [...formData.services];
-    newServices[index].numberOfSessionsToUse = numberOfSessions;
     setFormData({
       ...formData,
       services: newServices,
@@ -1902,119 +1840,6 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
                 );
               })()}
 
-              {/* OLD - Remove this entire block */}
-              {false && formData.customerId && (() => {
-                const customerPackages = getCustomerActivePackages(formData.customerId);
-                
-                if (customerPackages.length === 0) return null;
-                
-                return (
-                  <div className="border border-orange-200 rounded-lg bg-orange-50 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Package className="w-5 h-5 text-[#FE7410]" />
-                      <h3 className="text-sm font-bold text-gray-900">
-                        Gói liệu trình đang sở hữu ({customerPackages.length} gói)
-                      </h3>
-                    </div>
-                    
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {customerPackages.map((pkg) => {
-                        const packageServices = pkg.serviceIds
-                          .map(sid => products.find(p => p.id === sid))
-                          .filter(Boolean);
-                        
-                        const isLowSessions = pkg.remainingSessions <= 2;
-                        const isMediumSessions = pkg.remainingSessions > 2 && pkg.remainingSessions <= 5;
-                        
-                        return (
-                          <div 
-                            key={pkg.id} 
-                            className={`border rounded-lg p-3 bg-white ${
-                              isLowSessions 
-                                ? 'border-orange-300' 
-                                : isMediumSessions
-                                ? 'border-yellow-300'
-                                : 'border-green-300'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className={`text-xs font-bold ${
-                                    isLowSessions 
-                                      ? 'text-orange-600' 
-                                      : isMediumSessions
-                                      ? 'text-yellow-600'
-                                      : 'text-green-600'
-                                  }`}>
-                                    {isLowSessions ? '🟠' : isMediumSessions ? '🟡' : '🟢'}
-                                  </span>
-                                  <h4 className="text-sm font-bold text-gray-900">
-                                    {pkg.treatmentName}
-                                  </h4>
-                                </div>
-                                <div className="mt-1 text-xs text-gray-600 space-y-0.5">
-                                  <div>
-                                    Đã dùng: <strong>{pkg.usedSessions}/{pkg.totalSessions}</strong> buổi
-                                    {' • '}
-                                    Còn lại: <strong className={
-                                      isLowSessions 
-                                        ? 'text-orange-600' 
-                                        : isMediumSessions
-                                        ? 'text-yellow-600'
-                                        : 'text-green-600'
-                                    }>{pkg.remainingSessions}</strong> buổi
-                                    {isLowSessions && <span className="text-orange-600 font-bold ml-1">⚠️ Sắp hết</span>}
-                                  </div>
-                                  <div>
-                                    Mua ngày: {new Date(pkg.purchaseDate).toLocaleDateString('vi-VN')}
-                                    {pkg.expiryDate && (
-                                      <> • Hết hạn: {new Date(pkg.expiryDate).toLocaleDateString('vi-VN')}</>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="mt-2 pt-2 border-t border-gray-200">
-                              <p className="text-xs font-semibold text-gray-700 mb-1.5">Dịch vụ trong gói:</p>
-                              <div className="space-y-1.5">
-                                {packageServices.map((service) => {
-                                  if (!service) return null;
-                                  const addedCount = countServiceFromPackage(service.id, pkg.id);
-                                  
-                                  return (
-                                    <div key={service.id} className="flex items-center justify-between text-xs bg-gray-50 rounded px-2 py-1.5">
-                                      <div className="flex-1">
-                                        <span className="text-gray-800 font-medium">{service.name}</span>
-                                        {service.duration && (
-                                          <span className="text-gray-500 ml-2">({service.duration} phút)</span>
-                                        )}
-                                      </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => addServiceFromPackage(service.id, pkg.id, pkg.treatmentName)}
-                                        className={`ml-2 px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
-                                          addedCount > 0
-                                            ? 'bg-gray-200 text-gray-600 cursor-default'
-                                            : 'bg-[#FE7410] text-white hover:bg-[#E56509]'
-                                        }`}
-                                      >
-                                        {addedCount > 0 ? `✓ Đã thêm (${addedCount})` : 'Chọn'}
-                                      </button>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
               <div className="space-y-6">
                 {/* DỊCH VỤ SECTION */}
                 <div>
@@ -2036,8 +1861,6 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
                       .map((service, actualIndex) => ({ service, actualIndex }))
                       .filter(({ service }) => service.productType === 'service' || service.productType === 'treatment')
                       .map(({ service, actualIndex }, displayIndex) => {
-                        const selectedProduct = products.find(p => p.id === service.productId);
-                        
                         return (
                           <div key={service.instanceId || actualIndex} className={`border rounded-lg p-4 space-y-3 font-['Inter'] ${
                             service.useTreatmentPackage 
@@ -2082,14 +1905,14 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
                                       
                                       // ⭐ Auto-calculate endTime when product changes
                                       const duration = selectedProduct.duration || 60;
-                                      const newStartTime = currentService.startTime || formData.startTime;
+                                      const newStartTime = currentService.startTime || calculateStartTime();
                                       const newEndTime = calculateTimeEnd(newStartTime, duration);
                                       
                                       updatedServices[actualIndex] = {
                                         ...currentService,
                                         productId: selectedProduct.id,
                                         productName: selectedProduct.name,
-                                        productType: selectedProduct.type || 'service',
+                                        productType: selectedProduct.productType || selectedProduct.type || 'service',
                                         price: selectedProduct.price,
                                         duration: duration,
                                         startTime: newStartTime,
@@ -2486,7 +2309,7 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
                       <div className="text-xs text-green-600 space-y-1">
                         {packageServices.map((svc, idx) => (
                           <div key={idx}>
-                            • {svc.productName} (Buổi {svc.packageSessionNumber})
+                            • {svc.productName} (Buổi {svc.sessionNumber})
                           </div>
                         ))}
                       </div>
@@ -2511,9 +2334,9 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
                   // ⭐ Hoàn lại TỪNG DỊCH VỤ trong gói liệu trình (item-level)
                   let returnedCount = 0;
                   deleteConfirmAppointment.services.forEach(svc => {
-                    if (svc.useTreatmentPackage && svc.treatmentPackageId && svc.packageSessionNumber && svc.productId) {
-                      console.log(`♻️ Returning: ${svc.productName} from session ${svc.packageSessionNumber}`);
-                      returnPackageSession(svc.treatmentPackageId, svc.packageSessionNumber, svc.productId);
+                    if (svc.useTreatmentPackage && svc.treatmentPackageId && svc.sessionNumber && svc.productId) {
+                      console.log(`♻️ Returning: ${svc.productName} from session ${svc.sessionNumber}`);
+                      returnPackageSession(svc.treatmentPackageId, svc.sessionNumber, svc.productId);
                       returnedCount++;
                     }
                   });

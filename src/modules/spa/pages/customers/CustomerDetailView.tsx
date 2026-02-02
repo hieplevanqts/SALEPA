@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { User, Mail, MapPin, Calendar, Edit, Trash2, Cake, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, ArrowLeft, Package, Scissors, TrendingUp, Printer, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Edit, Trash2, Cake, ShoppingBag, Clock, CreditCard, ArrowLeft, Package, Scissors, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import type { Customer, Order } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
@@ -203,20 +203,6 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
     return (
       today.getDate() === birthDate.getDate() &&
       today.getMonth() === birthDate.getMonth()
-    );
-  };
-
-  const getStatusBadge = (status?: string) => {
-    const badges = {
-      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ xử lý' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã hủy' },
-    };
-    const badge = badges[status as keyof typeof badges] || badges.completed;
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
-        {badge.label}
-      </span>
     );
   };
 

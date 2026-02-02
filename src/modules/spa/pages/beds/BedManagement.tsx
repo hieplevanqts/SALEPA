@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import type { Bed } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import {
   Search, Plus, Edit, Trash2, X, Bed as BedIcon
 } from 'lucide-react';
@@ -10,7 +9,6 @@ import { Pagination } from '../../components/common/Pagination';
 
 export default function BedManagement() {
   const { beds, createBed, updateBed, deleteBed } = useStore();
-  const { t } = useTranslation();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | Bed['status']>('all');

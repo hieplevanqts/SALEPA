@@ -623,7 +623,7 @@ interface Store {
   logout: () => void;
   
   // Appointment actions
-  createAppointment: (appointmentData: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  createAppointment: (appointmentData: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt' | 'code'>) => void;
   updateAppointment: (appointmentId: string, updates: Partial<Appointment>) => void;
   deleteAppointment: (appointmentId: string) => void;
   updateAppointmentStatus: (appointmentId: string, status: Appointment['status']) => void;

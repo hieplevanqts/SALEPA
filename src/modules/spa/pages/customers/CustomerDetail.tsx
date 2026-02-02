@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { X, User, Mail, MapPin, Calendar, Edit, Trash2, Cake, Hash, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, Package, CheckCircle, XCircle, CircleDot, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, MapPin, Calendar, Edit, Trash2, Cake, Hash, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, Package, CheckCircle, CircleDot, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import type { Customer } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
@@ -18,27 +18,31 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
   const [activeTab, setActiveTab] = useState<'orders' | 'treatments'>('treatments'); // Default to treatments tab
   const [expandedPackages, setExpandedPackages] = useState<string[]>([]);
   const [expandedSessions, setExpandedSessions] = useState<string[]>([]); // Track expanded sessions
-
-  // Auto-expand all packages when switching to treatments tab
-  useEffect(() => {
-    if (activeTab === 'treatments' && customerPackages.length > 0) {
-      // Auto-expand all packages
-      const allPackageIds = customerPackages.map(pkg => pkg.id);
-      setExpandedPackages(allPackageIds);
-      console.log('📦 Auto-expanding all packages:', allPackageIds);
-    }
-  }, [activeTab, customerPackages.length]);
+  const customerPhone = customer.phone ?? '';
+  const customerDateOfBirth = customer.dateOfBirth ?? customer.birthDate;
+  const customerGender = customer.gender;
+  const customerNotes = customer.notes;
+  const customerTaxCode = customer.taxCode;
+  const customerTotalSpent = customer.totalSpent ?? 0;
+  const customerOrderCount = customer.orderCount ?? 0;
+  const getTranslation = (key: string, fallback: string) => {
+    const value = t(key);
+    return value === key ? fallback : value;
+  };
 
   // Get customer orders
   const customerOrders = useMemo(() => {
-    let result = orders.filter((order) => order.customerPhone === customer.phone);
-    
+    let result = orders.filter((order) => order.customerPhone === customerPhone);
+
     if (filterStatus !== 'all') {
       result = result.filter((order) => order.status === filterStatus);
     }
-    
-    return result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [orders, customer.phone, filterStatus]);
+
+    return result.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
+  }, [orders, customerPhone, filterStatus]);
 
   // Get customer treatment packages
   const customerPackages = useMemo(() => {
@@ -53,6 +57,14 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
     });
     return packages;
   }, [customerTreatmentPackages, customer.id]);
+
+  // Auto-expand all packages when switching to treatments tab
+  useEffect(() => {
+    if (activeTab === 'treatments' && customerPackages.length > 0) {
+      const allPackageIds = customerPackages.map((pkg) => pkg.id);
+      setExpandedPackages(allPackageIds);
+    }
+  }, [activeTab, customerPackages]);
 
   // Get package appointments  
   const getPackageAppointments = (packageId: string) => {
@@ -102,19 +114,19 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
       case 'acquaintance':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-            {t.customer?.acquaintance || 'Acquaintance'}
+            {t.customerData?.acquaintance || 'Acquaintance'}
           </span>
         );
       case 'employee':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            {t.customer?.employee || 'Employee'}
+            {t.customerData?.employee || 'Employee'}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-            {t.customer?.regular || 'Regular'}
+            {t.customerData?.regular || 'Regular'}
           </span>
         );
     }
@@ -163,17 +175,13 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
   };
 
   const isBirthday = () => {
-    if (!customer.dateOfBirth) return false;
+    if (!customerDateOfBirth) return false;
     const today = new Date();
-    const birthDate = new Date(customer.dateOfBirth);
+    const birthDate = new Date(customerDateOfBirth);
     return (
       today.getDate() === birthDate.getDate() &&
       today.getMonth() === birthDate.getMonth()
     );
-  };
-
-  const handleCallPhone = () => {
-    window.location.href = `tel:${customer.phone}`;
   };
 
   const getStatusBadge = (status?: string) => {
@@ -210,7 +218,7 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-semibold">{t.customer?.detailTitle || 'Customer Details'}</h2>
+          <h2 className="text-2xl font-semibold">{t.customerData?.detailTitle || 'Customer Details'}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -265,37 +273,37 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
                       <span>{formatDate(customer.dateOfBirth)}</span>
                       {isBirthday() && (
                         <span className="text-xs bg-pink-100 text-pink-800 px-2 py-0.5 rounded-full">
-                          🎂 {t.customer?.birthday || 'Birthday Today'}
+                          🎂 {t.customerData?.birthday || 'Birthday Today'}
                         </span>
                       )}
                     </div>
                   )}
 
                   {/* Gender */}
-                  {customer.gender && (
+                  {customerGender && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <span className="text-blue-600">👤</span>
-                      <span>{(t.customer as any)?.[customer.gender] || customer.gender}</span>
+                      <span>{getTranslation(`customerData.${customerGender}`, customerGender)}</span>
                     </div>
                   )}
 
                   {/* Tax Code */}
-                  {customer.taxCode && (
+                  {customerTaxCode && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <Hash className="w-5 h-5 text-blue-600" />
-                      <span>{customer.taxCode}</span>
+                      <span>{customerTaxCode}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Notes */}
-                {customer.notes && (
+                {customerNotes && (
                   <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-yellow-900 mb-1">{t.customer?.notes || 'Notes'}</p>
-                        <p className="text-sm text-yellow-800">{customer.notes}</p>
+                        <p className="text-sm font-medium text-yellow-900 mb-1">{t.customerData?.notes || 'Notes'}</p>
+                        <p className="text-sm text-yellow-800">{customerNotes}</p>
                       </div>
                     </div>
                   </div>
@@ -305,11 +313,11 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
               {/* Stats */}
               <div className="text-right flex-shrink-0">
                 <div className="text-3xl font-bold text-blue-600">
-                  {customer.totalSpent.toLocaleString('vi-VN')}đ
+                  {customerTotalSpent.toLocaleString('vi-VN')}đ
                 </div>
-                <p className="text-sm text-gray-600 mt-1">{t.customer?.totalSpent || 'Total Spent'}</p>
+                <p className="text-sm text-gray-600 mt-1">{t.customerData?.totalSpent || 'Total Spent'}</p>
                 <div className="mt-2 text-lg font-semibold text-gray-900">
-                  {customer.orderCount} {t.customer?.orders || 'orders'}
+                  {customerOrderCount} {t.customerData?.orders || 'orders'}
                 </div>
               </div>
             </div>
@@ -759,8 +767,7 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
                                                       <span className="inline-flex items-center">
                                                         <span className="font-medium">Loại:</span>
                                                         <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
-                                                          {item.productType === 'service' ? 'Dịch vụ' : 
-                                                           item.productType === 'treatment' ? 'Liệu trình' : 'Sản phẩm'}
+                                                          {item.productType === 'service' ? 'Dịch vụ' : 'Sản phẩm'}
                                                         </span>
                                                       </span>
                                                       {item.quantity && item.quantity > 1 && (
@@ -867,14 +874,14 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
             className="px-6 py-2.5 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
           >
             <Trash2 className="w-5 h-5" />
-            {t.customer?.delete || 'Delete'}
+            {t.customerData?.delete || 'Delete'}
           </button>
           <button
             onClick={onEdit}
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
             <Edit className="w-5 h-5" />
-            {t.customer?.edit || 'Edit'}
+            {t.customerData?.edit || 'Edit'}
           </button>
         </div>
       </div>

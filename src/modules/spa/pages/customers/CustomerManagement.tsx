@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
-import type { Customer } from '../../../../lib/spa-lib/store';
+import type { Customer, Order } from '../../../../lib/spa-lib/store';
 import { Plus, Search, Eye, Edit, Trash2, Users, Download, Upload } from 'lucide-react';
 import { CustomerForm } from '../../components/forms/CustomerForm';
 import { CustomerDetailView } from './CustomerDetailView';
