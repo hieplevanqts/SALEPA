@@ -10,11 +10,11 @@ import {
   Menu, ChevronRight, Check, AlertCircle, Barcode, Save,
   RotateCcw, FileText, Users, PauseCircle, PlayCircle,
   Settings, History, Grid, Monitor, Keyboard, Edit3, Edit2,
-  MessageSquare, Receipt, Eye, Volume2, Bell, Gift, SplitSquare,
-  Package, Scissors, Sparkles, UserPlus, UtensilsCrossed
+  MessageSquare, Receipt, Eye, Volume2, Bell, Gift,
+  Package, Scissors, Sparkles, UtensilsCrossed
 } from 'lucide-react';
-import { CardPaymentForm, type CardData } from '../../components/forms/CardPaymentForm';
-import { QRPaymentForm, type QRPaymentData } from '../../components/forms/QRPaymentForm';
+import { CardPaymentForm } from '../../components/forms/CardPaymentForm';
+import { QRPaymentForm } from '../../components/forms/QRPaymentForm';
 import { Receipt as ReceiptModal } from '../../components/common/Receipt';
 import { CustomerForm } from '../../components/forms/CustomerForm';
 
@@ -55,18 +55,14 @@ export function ModernSalesScreen() {
     // deleteHeldBills,
     orders,
     settings,
-    sidebarCollapsed,
-    toggleSidebar,
     addToRecent,
     customers,
-    addCustomer,
     createCustomerTreatmentPackage,
     editingOrder,
     setEditingOrder,
     clearCart,
     setCart,
     tableAreas, // Lấy từ quản lý phòng/bàn
-    selectedIndustry,
     assignOrderToTable,
     clearTable,
     createKitchenOrder,
@@ -90,7 +86,6 @@ export function ModernSalesScreen() {
   const [showRecentTransactions, setShowRecentTransactions] = useState(false);
   const [showQuickQuantity, setShowQuickQuantity] = useState(false);
   const [showItemNote, setShowItemNote] = useState(false);
-  const [showPriceOverride, setShowPriceOverride] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
@@ -110,7 +105,6 @@ export function ModernSalesScreen() {
   const [selectedProductForQty, setSelectedProductForQty] = useState<string | null>(null);
   const [itemNote, setItemNote] = useState('');
   const [selectedItemForNote, setSelectedItemForNote] = useState<string | null>(null); // Track which item is being edited for note
-  const [priceOverride, setPriceOverride] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [tipAmount, setTipAmount] = useState(0);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -260,8 +254,6 @@ export function ModernSalesScreen() {
   ];
 
   // Quick amounts for cash payment
-  const quickAmounts = [50000, 100000, 200000, 500000];
-  
   // Quick discount percentages
   const quickDiscounts = [5, 10, 15, 20];
 
@@ -311,7 +303,7 @@ export function ModernSalesScreen() {
 
     const product = products.find(p => p.barcode === barcodeInput.trim());
     if (product) {
-      addToCart(product.id);
+      addToCart(product);
       playSound('beep');
       setBarcodeInput('');
     } else {
@@ -329,35 +321,30 @@ export function ModernSalesScreen() {
     if (selectedTableId && cart.length === 0 && !currentOrderId) {
       console.log('[handleProductClick] 🆕 Creating order for first item');
       
-      const currentUsername = localStorage.getItem('salepa_username') || 'Thu ngân';
-      const newOrderId = `ORD-${Date.now()}`;
-      
-      // Create initial order with this first item
-      const orderData = {
-        id: newOrderId,
-        orderNumber: `${selectedTableName || 'TABLE'}-${Date.now().toString().slice(-6)}`,
-        items: [{ ...product, quantity: 1 }],
-        subtotal: product.price,
-        discount: 0,
-        total: product.price,
-        date: new Date().toISOString(),
-        status: 'pending' as const,
-        paymentStatus: 'unpaid' as const,
-        createdBy: currentUsername,
-        orderType: 'dine-in' as const,
-        tableId: selectedTableId,
-        tableName: selectedTableName,
-        tableNumber: selectedTableName ? parseInt(selectedTableName.match(/\d+/)?.[0] || '0') : undefined,
-        notifiedItemIds: [],
-        orderHistory: [],
-      };
-      
-      createOrder(orderData);
-      setCurrentOrderId(newOrderId);
-      setEditingOrderId(newOrderId);
-      assignOrderToTable(selectedTableId, newOrderId);
-      
-      console.log('[handleProductClick] ✅ Order created:', newOrderId);
+    const currentUsername = localStorage.getItem('salepa_username') || 'Thu ngân';
+    
+    const orderData = {
+      orderNumber: `${selectedTableName || 'TABLE'}-${Date.now().toString().slice(-6)}`,
+      paymentMethod,
+      timestamp: new Date().toISOString(),
+      discount: 0,
+      note: '',
+      status: 'pending' as const,
+      createdBy: currentUsername,
+      orderType: 'dine-in' as const,
+      tableId: selectedTableId,
+      tableName: selectedTableName,
+      tableNumber: selectedTableName ? parseInt(selectedTableName.match(/\d+/)?.[0] || '0') : undefined,
+      notifiedItemIds: [],
+      orderHistory: [],
+    };
+    
+    const createdOrder = createOrder(orderData);
+    setCurrentOrderId(createdOrder.id);
+    setEditingOrderId(createdOrder.id);
+    assignOrderToTable(selectedTableId, createdOrder.id);
+    
+    console.log('[handleProductClick] ✅ Order created:', createdOrder.id);
     }
     
     addToCart(product);
@@ -519,6 +506,7 @@ export function ModernSalesScreen() {
       discount,
       note: orderNote,
       status: receivedAmt >= total ? 'completed' : 'pending',
+      timestamp: new Date().toISOString(),
       paidAt: new Date().toISOString(),
       receivedAmount: receivedAmt,
       changeAmount: calculatedChange,
@@ -547,23 +535,44 @@ export function ModernSalesScreen() {
     if (selectedCustomerId) {
       cart.forEach(item => {
         if (item.productType === 'treatment' && item.sessions && item.sessions > 0) {
-          // Tìm các dịch vụ đi kèm trong liệu trình
           const treatmentProduct = products.find(p => p.id === item.id);
-          const serviceIds = treatmentProduct?.sessionDetails 
-            ? treatmentProduct.sessionDetails.flatMap(session => 
-                session.services.map(s => s.id)
-              )
+          const sessions = treatmentProduct?.sessionDetails
+            ? treatmentProduct.sessionDetails.map((session) => ({
+                sessionNumber: session.sessionNumber,
+                sessionName: session.sessionName || `Buổi ${session.sessionNumber}`,
+                items: [
+                  ...session.products.map((prod) => {
+                    const product = products.find(p => p.id === prod.id);
+                    return {
+                      productId: prod.id,
+                      productName: product?.name || prod.id,
+                      productType: 'product' as const,
+                      quantity: prod.quantity,
+                    };
+                  }),
+                  ...session.services.map((serv) => {
+                    const service = products.find(p => p.id === serv.id);
+                    return {
+                      productId: serv.id,
+                      productName: service?.name || serv.id,
+                      productType: 'service' as const,
+                      quantity: serv.quantity,
+                      duration: service?.duration,
+                    };
+                  }),
+                ],
+              }))
             : [];
           
           createCustomerTreatmentPackage({
             customerId: selectedCustomerId,
             customerName: customerName,
             treatmentProductId: item.id,
-            treatmentName: item.name,
-            totalSessions: item.sessions,
-            usedSessions: 0,
-            remainingSessions: item.sessions,
-            serviceIds: serviceIds,
+            treatmentName: item.name || '',
+            totalSessions: item.sessions || 0,
+            usedSessionNumbers: [],
+            remainingSessions: item.sessions || 0,
+            sessions,
             purchaseDate: new Date().toISOString(),
             orderId: orderId,
             isActive: true,
@@ -645,10 +654,6 @@ export function ModernSalesScreen() {
     playSound('beep');
   };
 
-  const handleQuickPay = (amount: number) => {
-    setCustomerAmount(amount.toString());
-  };
-
   // F&B Restaurant Functions
   const handleCreateTakeawayOrder = () => {
     // Generate takeaway order number
@@ -670,22 +675,15 @@ export function ModernSalesScreen() {
     
     // Create empty order immediately
     const currentUsername = localStorage.getItem('salepa_username') || 'Admin';
-    const newOrderId = `ORD-${Date.now()}`;
-    
-    const newOrder = {
-      id: newOrderId,
+    const orderData = {
       orderNumber: takeawayName,
-      items: [],
-      subtotal: 0,
+      paymentMethod,
+      timestamp: new Date().toISOString(),
       discount: 0,
-      total: 0,
-      date: new Date().toISOString(),
+      note: '',
       status: 'pending' as const,
-      paymentStatus: 'unpaid' as const,
-      paymentMethod: undefined,
       customerName: '',
       customerPhone: '',
-      note: '',
       orderType: 'takeaway' as const,
       tableId: tableId,
       tableName: takeawayName,
@@ -693,14 +691,14 @@ export function ModernSalesScreen() {
       notifiedItemIds: [],
     };
     
-    createOrder(newOrder as any);
+    const createdOrder = createOrder(orderData);
     
     // Set order info
     setSelectedTableId(tableId);
     setSelectedTableName(takeawayName);
     setOrderType('takeaway');
-    setCurrentOrderId(newOrderId);
-    setEditingOrderId(newOrderId);
+    setCurrentOrderId(createdOrder.id);
+    setEditingOrderId(createdOrder.id);
     setNotifiedItems([]);
     
     // Switch to menu tab
@@ -1355,7 +1353,7 @@ export function ModernSalesScreen() {
         tableName: selectedTableName,
         tableNumber: selectedTableName ? parseInt(selectedTableName.match(/\d+/)?.[0] || '0') : undefined,
         notifiedItemIds: [],
-        timestamp: ''
+        timestamp: new Date().toISOString(),
       });
       
       orderId = newOrder.id;
@@ -1473,109 +1471,6 @@ export function ModernSalesScreen() {
     }
     
     playSound('success');
-  };
-
-  const handleCompletePaymentRestaurant = () => {
-    if (cart.length === 0) {
-      toast.error('Giỏ hàng trống');
-      return;
-    }
-    
-    if (!selectedTableId) {
-      toast.error('Vui lòng chọn bàn');
-      return;
-    }
-    
-    // Validate amount
-    const receivedAmt = parseFloat(customerAmount || '0');
-    if (receivedAmt < total) {
-      toast.error('Số tiền nhận không đủ');
-      return;
-    }
-    
-    const calculatedChange = receivedAmt - total;
-    const currentUser = localStorage.getItem('salepa_username') || '';
-    
-    const initialPaymentHistory = [{
-      id: `PAY-${Date.now()}`,
-      amount: receivedAmt,
-      paymentMethod: paymentMethod,
-      paidAt: new Date().toISOString(),
-      paidBy: currentUser,
-      note: orderNote || '',
-      changeAmount: calculatedChange,
-    }];
-    
-    const extractTableNumber = (tableName: string): number | undefined => {
-      const match = tableName.match(/\d+/);
-      return match ? parseInt(match[0]) : undefined;
-    };
-    
-    // Create/update completed order
-    const orderData = {
-      paymentMethod,
-      customerName,
-      customerPhone,
-      discount,
-      note: orderNote,
-      status: 'completed' as const,
-      paidAt: new Date().toISOString(),
-      receivedAmount: receivedAmt,
-      changeAmount: calculatedChange,
-      paymentHistory: initialPaymentHistory,
-      orderType: 'dine-in' as const,
-      tableId: selectedTableId,
-      tableName: selectedTableName,
-      tableNumber: extractTableNumber(selectedTableName),
-      notifiedItemIds: cart.map(item => ({ id: item.id, quantity: item.quantity })), // Mark all as notified
-    };
-    
-    // If editing existing order, delete it first
-    if (currentOrderId) {
-      deleteOrder(currentOrderId);
-    }
-    
-    const createdOrder = createOrder(orderData);
-    
-    // Kitchen orders will be auto-served by createOrder action (when order.status = 'completed')
-    
-    // Note: Bàn tự động về 'available' vì order có status='completed'
-    clearTable(selectedTableId);
-    
-    // Show receipt
-    const createdOrderData = {
-      id: createdOrder.id,
-      items: cart,
-      subtotal,
-      discount,
-      total,
-      date: new Date().toISOString(),
-      paymentMethod,
-      customerName,
-      customerPhone,
-      note: orderNote,
-      receivedAmount: receivedAmt,
-      changeAmount: calculatedChange,
-      paymentHistory: initialPaymentHistory,
-    };
-    
-    setCompletedOrder(createdOrderData);
-    setShowReceipt(true);
-    
-    toast.success('✅ Thanh toán thành công!', {
-      description: `${selectedTableName} | Tổng: ${total.toLocaleString()}đ | Thừa: ${calculatedChange.toLocaleString()}đ`,
-      duration: 3000,
-    });
-    
-    playSound('success');
-    
-    // Close checkout modal immediately
-    setShowCheckout(false);
-    
-    // Auto-close receipt after 3 seconds, then reset everything and return to table selection
-    setTimeout(() => {
-      handleCloseReceipt();
-    }, 3000);
   };
 
   // Check if there are items not yet notified or with increased quantity or changed note
@@ -1745,6 +1640,22 @@ export function ModernSalesScreen() {
           }
         }
       });
+
+      const normalizedNotifiedItems = (() => {
+        const notifiedData = editingOrder.notifiedItemIds || [];
+        if (notifiedData.length > 0 && typeof notifiedData[0] === 'string') {
+          return items
+            .filter((item: any) => notifiedData.includes(item.id))
+            .map((item: any) => ({
+              id: item.id,
+              quantity: item.quantity,
+            }));
+        }
+        if (notifiedData.length > 0) {
+          return [...notifiedData] as { id: string; quantity: number }[];
+        }
+        return [];
+      })();
       
       // Load discount
       if (editingOrder.discount) {
@@ -1772,7 +1683,7 @@ export function ModernSalesScreen() {
           orderDiscount: editingOrder.discount || 0,
           orderNote: editingOrder.note || '',
           paymentMethod: (editingOrder.paymentMethod || 'cash') as PaymentMethodType,
-          notifiedItems: editingOrder.notifiedItemIds || [],
+          notifiedItems: normalizedNotifiedItems,
         });
       }, 100);
       

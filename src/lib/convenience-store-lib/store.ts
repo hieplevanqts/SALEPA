@@ -128,7 +128,14 @@ export interface Order {
   note?: string;
   shiftId?: string;
   messages?: ChatMessage[];
-  status?: "pending" | "completed" | "cancelled"; // Add status
+  status?:
+    | "pending"
+    | "completed"
+    | "cancelled"
+    | "confirmed"
+    | "preparing"
+    | "ready"
+    | "served"; // Add status
   paidAt?: string; // When payment was collected
   receivedAmount?: number; // Amount received from customer
   changeAmount?: number; // Change returned to customer
@@ -850,7 +857,7 @@ const migrateProductToNewSchema = (
     sessionDetails: oldProduct.sessionDetails,
   };
 };
-export const initialProducts: Product[] = [
+const initialProductSeeds = [
   // Nước giải khát
   {
     id: '1',
@@ -1091,6 +1098,9 @@ export const initialProducts: Product[] = [
   },
 ];
 
+export const initialProducts: Product[] =
+  initialProductSeeds.map(migrateProductToNewSchema);
+
  // Apply migration to initial data
 
 export const useStore = create<Store>()(
@@ -1114,7 +1124,7 @@ export const useStore = create<Store>()(
           name: "Đồ ăn vặt",
           description: "Bánh kẹo, snack, đồ ăn nhanh các loại",
           color: "#F97316",
-          status: true,
+          isActive: true,
           createdAt: "2024-01-01T00:00:00.000Z",
           createdBy: "system",
         },
@@ -1232,6 +1242,7 @@ export const useStore = create<Store>()(
           code: "VIP",
           name: "Khách hàng VIP",
           priority: 50,
+          min_spent: 0,
           status: 1,
           created_at: "2024-01-01T00:00:00.000Z",
           updated_at: "2024-01-01T00:00:00.000Z",
@@ -1242,6 +1253,7 @@ export const useStore = create<Store>()(
           code: "EMPLOYEE",
           name: "Nhân viên",
           priority: 100,
+          min_spent: 0,
           status: 1,
           created_at: "2024-01-01T00:00:00.000Z",
           updated_at: "2024-01-01T00:00:00.000Z",
@@ -1252,6 +1264,7 @@ export const useStore = create<Store>()(
           code: "ACQUAINTANCE",
           name: "Người quen",
           priority: 90,
+          min_spent: 0,
           status: 1,
           created_at: "2024-01-01T00:00:00.000Z",
           updated_at: "2024-01-01T00:00:00.000Z",
@@ -1262,6 +1275,7 @@ export const useStore = create<Store>()(
           code: "WHOLESALE",
           name: "Khách buôn/Đại lý",
           priority: 35,
+          min_spent: 0,
           status: 1,
           created_at: "2024-02-15T00:00:00.000Z",
           updated_at: "2024-02-15T00:00:00.000Z",
@@ -1272,6 +1286,7 @@ export const useStore = create<Store>()(
           code: "INACTIVE",
           name: "Khách hàng ngừng hoạt động",
           priority: -10,
+          min_spent: 0,
           status: 0,
           created_at: "2024-03-20T00:00:00.000Z",
           updated_at: "2024-03-20T00:00:00.000Z",
@@ -1921,6 +1936,12 @@ export const useStore = create<Store>()(
       },
 
       createOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          timestamp: orderTimestamp,
+          date: orderDate,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift, currentUser } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -1930,7 +1951,7 @@ export const useStore = create<Store>()(
           cart.reduce(
             (sum, item) => sum + item.discount * item.quantity,
             0,
-          ) + (orderData.discount || 0);
+          ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
 
         // Get current user info from localStorage
@@ -1959,12 +1980,12 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
           status: "pending",
           createdBy: currentUser?.fullName || currentUsername,
-          ...orderData,
+          ...restOrderData,
           paymentHistory: initialPaymentHistory, // Always ensure paymentHistory exists
         };
 
@@ -1984,7 +2005,8 @@ export const useStore = create<Store>()(
               if (cartItem) {
                 return {
                   ...p,
-                  stock: p.stock - cartItem.quantity,
+                  stock:
+                    (p.stock ?? p.quantity ?? 0) - cartItem.quantity,
                 };
               }
               return p;
@@ -2012,14 +2034,29 @@ export const useStore = create<Store>()(
 
             if (!existingCustomer) {
               // Create new customer
+              const now = new Date().toISOString();
+              const newCustomerId = `CUST-${Date.now()}`;
               const newCustomer: Customer = {
-                id: `CUST-${Date.now()}`,
-                name: orderData.customerName,
+                _id: newCustomerId,
+                tenant_id: "tenant_001",
+                code: newCustomerId,
+                full_name: orderData.customerName,
                 phone: orderData.customerPhone,
                 email: "",
-                customerGroup: "regular",
-                createdAt: new Date().toISOString(),
                 address: "",
+                total_spent: total,
+                total_orders: 1,
+                loyalty_points: 0,
+                status: "ACTIVE",
+                metadata: {},
+                created_at: now,
+                updated_at: now,
+
+                // Legacy fields
+                id: newCustomerId,
+                name: orderData.customerName,
+                customerGroup: "regular",
+                createdAt: now,
                 notes: "",
               };
               newState.customers = [
@@ -2084,7 +2121,8 @@ export const useStore = create<Store>()(
                           if (product) {
                             sessionItems.push({
                               productId: prod.id,
-                              productName: product.name,
+                              productName:
+                                product.name || product.title || prod.id,
                               productType: "product",
                               quantity: prod.quantity,
                             });
@@ -2099,7 +2137,10 @@ export const useStore = create<Store>()(
                           if (service) {
                             sessionItems.push({
                               productId: serv.id,
-                              productName: service.name,
+                              productName:
+                                service.name ||
+                                service.title ||
+                                serv.id,
                               productType: "service",
                               quantity: serv.quantity,
                               duration: service.duration,
