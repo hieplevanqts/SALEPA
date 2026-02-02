@@ -61,7 +61,7 @@ export function CashierShift() {
       return;
     }
 
-    closeShift(currentShift.id, cash, shiftNote);
+    closeShift(cash, 'Cashier' as const, shiftNote);
     setShowCloseModal(false);
     setClosingCash('');
     setShiftNote('');

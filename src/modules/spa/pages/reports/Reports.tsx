@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { useStore } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { 
-  Download, FileText, DollarSign, Users, UserCheck, ShoppingBag, 
-  Calendar, Clock, Package, Star, AlertCircle
+  Download, FileText, DollarSign, Users, 
+  Calendar, Clock, AlertCircle
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -16,8 +14,6 @@ import {
   demoPackageRevenue,
   demoProductRevenue,
   demoCustomerData,
-  demoServiceHistory,
-  demoPackageStatus,
   demoInventoryData,
   demoAppointmentStaffData
 } from '../../../../lib/spa-lib/demoReportData';
@@ -30,8 +26,7 @@ type ReportTab = 'revenue-overview' | 'revenue-staff' | 'revenue-service' | 'rev
 
 
 export function Reports() {
-  const { orders: ordersRaw, products, customers } = useStore();
-  const { t } = useTranslation();
+  
    const { type } = useParams<{ type: ReportTab }>();
 
   if (!type) {

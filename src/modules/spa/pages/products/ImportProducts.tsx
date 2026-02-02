@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { X, Upload, Download, CheckCircle, AlertCircle, Paperclip } from 'lucide-react';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { useStore } from '../../../../lib/spa-lib/store';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
@@ -25,7 +24,6 @@ interface ParsedProduct {
 }
 
 export function ImportProducts({ onClose }: ImportProductsProps) {
-  const { t } = useTranslation();
   const { addProduct, products, categories } = useStore();
   const [parsedData, setParsedData] = useState<ParsedProduct[]>([]);
   const [isDragging, setIsDragging] = useState(false);

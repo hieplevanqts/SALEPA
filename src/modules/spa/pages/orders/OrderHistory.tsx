@@ -21,15 +21,21 @@ interface OrderHistoryProps {
 }
 
 export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
-  const { orders: ordersRaw, selfServiceOrders: selfServiceOrdersRaw, deleteOrder, updateOrder, setEditingOrder } = useStore();
+  const { orders: ordersRaw, deleteOrder, updateOrder, setEditingOrder } = useStore();
   const { t } = useTranslation();
   
   // Normalize orders to arrays (handle persisted object format)
-  const orders = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
-  const selfServiceOrders = Array.isArray(selfServiceOrdersRaw) ? selfServiceOrdersRaw : Object.values(selfServiceOrdersRaw || {});
+  const orders: Order[] = Array.isArray(ordersRaw)
+    ? ordersRaw
+    : (Object.values(ordersRaw || {}) as Order[]);
   
   console.log('OrderHistory - orders:', orders.length);
   console.log('OrderHistory - ordersRaw:', ordersRaw);
+
+  const getPaidAmount = (order: Order): number => {
+    const legacyPaidAmount = (order as { paidAmount?: number }).paidAmount;
+    return order.receivedAmount ?? legacyPaidAmount ?? 0;
+  };
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -123,7 +129,7 @@ export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
       const matchesPayment = filterPayment === 'all' || order.paymentMethod === filterPayment;
       
       // Filter by payment status (paid/debt)
-      const receivedAmount = order.receivedAmount || order.paidAmount || 0;
+      const receivedAmount = getPaidAmount(order);
       const matchesStatus = filterStatus === 'all' || 
         (filterStatus === 'paid' && receivedAmount >= order.total) ||
         (filterStatus === 'debt' && receivedAmount < order.total);
@@ -183,7 +189,7 @@ export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
       ? filteredOrders.reduce((sum, order) => sum + order.total, 0) / filteredOrders.length 
       : 0,
     totalDebt: filteredOrders.reduce((sum, order) => {
-      const receivedAmount = order.receivedAmount || order.paidAmount || 0;
+      const receivedAmount = getPaidAmount(order);
       const debt = order.total - receivedAmount;
       return sum + (debt > 0 ? debt : 0);
     }, 0),
@@ -240,7 +246,7 @@ export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
       
       // Prepare data for export
       const exportData = filteredOrders.map(order => {
-        const receivedAmount = order.receivedAmount || order.paidAmount || 0;
+        const receivedAmount = getPaidAmount(order);
         const remainingDebt = order.total - receivedAmount;
         
         // Format payment method
@@ -759,7 +765,7 @@ export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
                   </thead>
                   <tbody>
                     {paginatedOrders.map((order) => {
-                      const receivedAmount = order.receivedAmount || order.paidAmount || 0;
+                      const receivedAmount = getPaidAmount(order);
                       const isUnderPaid = receivedAmount < order.total && receivedAmount !== order.total;
                       
                       // Display amount: if paid more than total, show total; otherwise show actual amount
@@ -962,9 +968,8 @@ export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
           
           {/* Payment Modal */}
           {paymentOrder && (() => {
-            const receivedAmount = paymentOrder.receivedAmount || paymentOrder.paidAmount || 0;
+            const receivedAmount = getPaidAmount(paymentOrder);
             const remainingAmount = paymentOrder.total - receivedAmount;
-            const change = customerAmount ? parseFloat(customerAmount) - remainingAmount : 0;
             
             const handleCompletePayment = () => {
               const additionalAmount = parseFloat(customerAmount || '0');
@@ -1062,9 +1067,7 @@ export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
                         <div>
                           <CardPaymentForm
                             amount={remainingAmount}
-                            onSuccess={(data) => {
-                              handleCompletePayment();
-                            }}
+                            onSuccess={() => handleCompletePayment()}
                             onCancel={() => setPaymentMethod('cash')}
                           />
                         </div>
@@ -1076,9 +1079,7 @@ export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
                             amount={remainingAmount}
                             orderCode={`${paymentOrder.id}-${Date.now()}`}
                             paymentType={paymentMethod}
-                            onSuccess={(data) => {
-                              handleCompletePayment();
-                            }}
+                            onSuccess={() => handleCompletePayment()}
                             onCancel={() => setPaymentMethod('cash')}
                           />
                         </div>

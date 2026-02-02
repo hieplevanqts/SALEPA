@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Clock, MessageSquare, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, MapPin, MessageSquare, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { ChatBox } from '../../components/shared/ChatBox';
 import type { SelfServiceOrder } from '../../../../lib/spa-lib/store';

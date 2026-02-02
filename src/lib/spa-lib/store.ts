@@ -46,6 +46,8 @@ export interface Product {
   duration?: number; // For services and treatments (in minutes)
   sessions?: number; // For treatments (number of sessions in package)
   sessionDetails?: TreatmentSessionDetail[]; // Chi tiết từng buổi cho liệu trình
+  unit?: string; // Optional unit label (e.g., "chai", "hộp")
+  lowStockThreshold?: number; // Optional low-stock threshold per product
 }
 
 export interface ProductOption {

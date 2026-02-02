@@ -3,8 +3,8 @@ import { useStore } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { 
   ShoppingBag, Clock, CheckCircle, XCircle, AlertCircle, 
-  Filter, Search, MapPin, User, MessageSquare, ChevronRight,
-  Utensils, PackageOpen, Phone, TrendingUp, Package, Eye
+  Filter, Search, MapPin, User, MessageSquare,
+  Phone, TrendingUp, Package, Eye
 } from 'lucide-react';
 import { OrderDetailFullScreen } from './OrderDetailFullScreen';
 import { MessageInbox } from '../messages/MessageInbox';
@@ -411,7 +411,7 @@ export function OrderManagement() {
                                     </span>
                                   </div>
                                   <p className={`text-sm ${hasUnreadMessages ? 'text-blue-900 font-medium' : 'text-gray-700'} line-clamp-2`}>
-                                    {order.messages[order.messages.length - 1].text}
+                                    {order.messages[order.messages.length - 1].message}
                                   </p>
                                 </div>
                                 {hasUnreadMessages && (

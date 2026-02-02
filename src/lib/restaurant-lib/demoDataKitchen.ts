@@ -17,7 +17,10 @@ type RawCartItem = Omit<CartItem, 'discount'> & Partial<Pick<CartItem, 'discount
 type RawKitchenOrderItem = Omit<KitchenOrderItem, 'discount'> &
   Partial<Pick<KitchenOrderItem, 'discount'>>;
 
-type RawOrder = Omit<Order, 'items'> & { items: RawCartItem[] };
+type RawOrder = Omit<Order, 'items'> & {
+  items: RawCartItem[];
+  paymentStatus?: string;
+};
 type RawKitchenOrder = Omit<KitchenOrder, 'items'> & { items: RawKitchenOrderItem[] };
 
 const toCartItem = (item: RawCartItem): CartItem => ({
@@ -257,10 +260,13 @@ const rawDemoFBOrdersWithKitchen: RawOrder[] = [
 ];
 
 export const demoFBOrdersWithKitchen: Order[] = rawDemoFBOrdersWithKitchen.map(
-  (order) => ({
-    ...order,
-    items: order.items.map(toCartItem),
-  }),
+  (order) => {
+    const { items, paymentStatus: _paymentStatus, ...rest } = order;
+    return {
+      ...rest,
+      items: items.map(toCartItem),
+    };
+  },
 );
 
 // ==================== DEMO KITCHEN ORDERS ====================

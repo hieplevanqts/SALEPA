@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import type { Order } from '../../../../lib/spa-lib/store';
-import { Search, Calendar, DollarSign, Package, Clock, CheckCircle, XCircle, CreditCard, Printer } from 'lucide-react';
+import { Search, DollarSign, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { CardPaymentForm } from '../../components/forms/CardPaymentForm';
 import { QRPaymentForm } from '../../components/forms/QRPaymentForm';
 import { OrderDetailFullScreen } from '../orders/OrderDetailFullScreen'; // Full screen order detail

@@ -143,6 +143,15 @@ export interface Order {
   itemStatuses?: { [itemId: string]: { completed: number; served: number } }; // Track completed & served quantities per item
 }
 
+export type CreateOrderInput = Omit<
+  Order,
+  'id' | 'items' | 'subtotal' | 'total' | 'date' | 'timestamp' | 'discount'
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
+
 // Kitchen order item - NOW status is at ORDER level, not item level
 export interface KitchenOrderItem extends CartItem {
   notifiedAt?: string; // Thời gian thông báo bếp
@@ -273,7 +282,17 @@ export interface Permission {
   id: string;
   name: string;
   description: string;
-  category: 'system' | 'sales' | 'management' | 'reports';
+  category:
+    | 'system'
+    | 'sales'
+    | 'management'
+    | 'reports'
+    | 'product'
+    | 'customer'
+    | 'appointment'
+    | 'table'
+    | 'inventory'
+    | 'user';
 }
 
 export interface RoleGroup {
@@ -346,6 +365,15 @@ export interface SelfServiceOrder extends Order {
   status: 'pending' | 'completed' | 'cancelled'; // Simplified to 3 main statuses only
   orderType: 'dine-in' | 'takeaway';
 }
+
+export type CreateSelfServiceOrderInput = Omit<
+  SelfServiceOrder,
+  'id' | 'items' | 'subtotal' | 'total' | 'date' | 'timestamp' | 'discount'
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
 
 export interface AppointmentService {
   instanceId?: string;
@@ -561,7 +589,7 @@ interface Store {
   setCart: (items: CartItem[]) => void; // Set cart directly for loading saved orders
 
   // Order actions
-  createOrder: (orderData: Omit<Order, 'id' | 'items' | 'subtotal' | 'total' | 'date'>) => Order;
+  createOrder: (orderData: CreateOrderInput) => Order;
   updateOrder: (orderId: string, updates: Partial<Order>) => void;
   deleteOrder: (orderId: string) => void;
   setEditingOrder: (order: Order | null) => void;
@@ -607,7 +635,7 @@ interface Store {
 
   // Self-service actions
   setCurrentTable: (table: Table | null) => void;
-  createSelfServiceOrder: (orderData: Omit<SelfServiceOrder, 'id' | 'date' | 'items' | 'subtotal' | 'total'>) => void;
+  createSelfServiceOrder: (orderData: CreateSelfServiceOrderInput) => void;
   updateOrderStatus: (orderId: string, status: SelfServiceOrder['status']) => void;
   addMessageToOrder: (orderId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
 
@@ -1928,6 +1956,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '',
@@ -1954,6 +1984,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 350000,
+              startTime: '11:00',
+              endTime: '12:00',
             },
           ],
           technicianId: '3',
@@ -1981,6 +2013,8 @@ export const useStore = create<Store>()(
               price: 2500000,
               sessionNumber: 1,
               maxSessions: 10,
+              startTime: '14:00',
+              endTime: '15:30',
             },
           ],
           technicianId: '3',
@@ -2007,6 +2041,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '10:00',
+              endTime: '11:30',
             },
           ],
           technicianId: '3',
@@ -2032,6 +2068,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 350000,
+              startTime: '15:00',
+              endTime: '16:00',
             },
           ],
           technicianId: '3',
@@ -2057,6 +2095,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:30',
+              endTime: '11:00',
             },
           ],
           technicianId: '',
@@ -2083,6 +2123,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 30,
               price: 350000,
+              startTime: '14:00',
+              endTime: '14:30',
             },
           ],
           technicianId: '3',
@@ -2111,6 +2153,8 @@ export const useStore = create<Store>()(
               price: 2500000,
               sessionNumber: 2,
               maxSessions: 10,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '3',
@@ -2136,6 +2180,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:00',
             },
           ],
           technicianId: '',
@@ -2161,6 +2207,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '',
@@ -2286,6 +2334,12 @@ export const useStore = create<Store>()(
       },
 
       createOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          date: orderDate,
+          timestamp: orderTimestamp,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift, currentUser, orders } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -2294,7 +2348,7 @@ export const useStore = create<Store>()(
         const totalDiscount = cart.reduce(
           (sum, item) => sum + (item.discount * item.quantity),
           0
-        ) + (orderData.discount || 0);
+        ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
 
         // Get current user info from localStorage
@@ -2331,12 +2385,12 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
           status: 'pending',
           createdBy: currentUser?.fullName || currentUsername,
-          ...orderData,
+          ...restOrderData,
           paymentHistory: initialPaymentHistory, // Always ensure paymentHistory exists
         };
 
@@ -2470,7 +2524,7 @@ export const useStore = create<Store>()(
                     const newPackage: CustomerTreatmentPackage = {
                       id: packageId,
                       customerId: customerId,
-                      customerName: orderData.customerName,
+                      customerName: orderData.customerName || '',
                       treatmentProductId: item.id,
                       treatmentName: item.name,
                       totalSessions: fullProduct.sessions,
@@ -2811,10 +2865,14 @@ export const useStore = create<Store>()(
       },
 
       // LEGACY - Keep for backward compatibility but log warning
-      updateKitchenItemStatus: (kitchenOrderId, itemId, status) => {
+      updateKitchenItemStatus: (
+        kitchenOrderId: string,
+        _itemId: string,
+        status: KitchenOrder['status'],
+      ) => {
         console.warn('[updateKitchenItemStatus] ⚠️ DEPRECATED - Use updateKitchenOrderStatus instead');
         // Just update the order status directly
-        get().updateKitchenOrderStatus(kitchenOrderId, status as KitchenOrder['status']);
+        get().updateKitchenOrderStatus(kitchenOrderId, status);
       },
 
       autoServeKitchenOrderOnPayment: (orderId) => {
@@ -3085,6 +3143,12 @@ export const useStore = create<Store>()(
       },
 
       createSelfServiceOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          date: orderDate,
+          timestamp: orderTimestamp,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -3093,7 +3157,7 @@ export const useStore = create<Store>()(
         const totalDiscount = cart.reduce(
           (sum, item) => sum + (item.discount * item.quantity),
           0
-        ) + (orderData.discount || 0);
+        ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
 
         const order: SelfServiceOrder = {
@@ -3102,10 +3166,10 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
-          ...orderData,
+          ...restOrderData,
         };
 
         set((state) => ({
@@ -3708,7 +3772,7 @@ export const useStore = create<Store>()(
       },
 
       updateStockOutReceipt: (receiptId, receiptData) => {
-        const { stockOutReceipts, products, currentUser } = get();
+        const { stockOutReceipts, products } = get();
         const oldReceipt = (stockOutReceipts || []).find(r => r.id === receiptId);
 
         if (oldReceipt) {
@@ -3864,7 +3928,12 @@ export const useStore = create<Store>()(
 
         // Find package that includes this service
         for (const pkg of activePackages) {
-          if (pkg.serviceIds.includes(serviceId)) {
+          const hasService = pkg.sessions.some((session) =>
+            session.items.some(
+              (item) => item.productType === 'service' && item.productId === serviceId,
+            ),
+          );
+          if (hasService) {
             return pkg;
           }
         }

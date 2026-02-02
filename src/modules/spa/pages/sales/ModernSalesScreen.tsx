@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
+import type { CreateOrderInput } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { toast } from 'sonner';
 import { 
@@ -329,7 +330,7 @@ export function ModernSalesScreen() {
       | 'pending';
 
     // Create order with receipt info
-    const orderData = {
+    const orderData: CreateOrderInput = {
       paymentMethod,
       customerId: selectedCustomerId || undefined, // Lưu customerId để lấy thông tin chi tiết
       customerName: finalCustomerName,

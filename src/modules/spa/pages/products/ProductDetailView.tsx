@@ -1,9 +1,8 @@
-import { ArrowLeft, Package, Barcode, DollarSign, Layers, Tag, FileText, Clock, Calendar, CheckCircle, AlertCircle, Edit, Trash2, Box, TrendingUp, User } from 'lucide-react';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
+import { ArrowLeft, Package, DollarSign, Clock, Calendar, AlertCircle, Edit, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AppSidebar } from '../../components/shared/AppSidebar';
 import { useStore } from '../../../../lib/spa-lib/store';
-import type { Product, TreatmentSessionDetail } from '../../../../lib/spa-lib/store';
+import type { Product } from '../../../../lib/spa-lib/store';
 
 interface ProductDetailViewProps {
   product: Product;
@@ -16,7 +15,6 @@ interface ProductDetailViewProps {
 type TabType = 'details' | 'sessions';
 
 export function ProductDetailView({ product, onClose, onEdit, onDelete, userRole = 'admin' }: ProductDetailViewProps) {
-  const { t } = useTranslation();
   const { products } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('details');
 
@@ -46,13 +44,6 @@ export function ProductDetailView({ product, onClose, onEdit, onDelete, userRole
     if (!product.stock || product.stock === 0) return 'text-red-600';
     if (product.stock <= (product.lowStockThreshold || 10)) return 'text-yellow-600';
     return 'text-green-600';
-  };
-
-  const getStockStatusLabel = () => {
-    if (product.productType !== 'product') return 'Không áp dụng';
-    if (!product.stock || product.stock === 0) return 'Hết hàng';
-    if (product.stock <= (product.lowStockThreshold || 10)) return 'Sắp hết';
-    return 'Còn hàng';
   };
 
   // Get product names for session details
