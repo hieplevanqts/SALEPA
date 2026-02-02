@@ -1618,6 +1618,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '',
@@ -1644,6 +1646,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 350000,
+              startTime: '11:00',
+              endTime: '12:00',
             },
           ],
           technicianId: '3',
@@ -1671,6 +1675,8 @@ export const useStore = create<Store>()(
               price: 2500000,
               sessionNumber: 1,
               maxSessions: 10,
+              startTime: '14:00',
+              endTime: '15:30',
             },
           ],
           technicianId: '3',
@@ -1697,6 +1703,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '10:00',
+              endTime: '11:30',
             },
           ],
           technicianId: '3',
@@ -1722,6 +1730,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 350000,
+              startTime: '15:00',
+              endTime: '16:00',
             },
           ],
           technicianId: '3',
@@ -1747,6 +1757,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:30',
+              endTime: '11:00',
             },
           ],
           technicianId: '',
@@ -1773,6 +1785,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 30,
               price: 350000,
+              startTime: '14:00',
+              endTime: '14:30',
             },
           ],
           technicianId: '3',
@@ -1801,6 +1815,8 @@ export const useStore = create<Store>()(
               price: 2500000,
               sessionNumber: 2,
               maxSessions: 10,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '3',
@@ -1826,6 +1842,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:00',
             },
           ],
           technicianId: '',
@@ -1851,6 +1869,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '',
@@ -2215,7 +2235,7 @@ export const useStore = create<Store>()(
                     const newPackage: CustomerTreatmentPackage = {
                       id: packageId,
                       customerId: customerId,
-                      customerName: orderData.customerName,
+                      customerName: orderData.customerName || '',
                       treatmentProductId: item.id,
                       treatmentName: item.name,
                       totalSessions: fullProduct.sessions,
@@ -3227,7 +3247,7 @@ export const useStore = create<Store>()(
       },
       
       updateStockOutReceipt: (receiptId, receiptData) => {
-        const { stockOutReceipts, products, currentUser } = get();
+        const { stockOutReceipts, products } = get();
         const oldReceipt = (stockOutReceipts || []).find(r => r.id === receiptId);
         
         if (oldReceipt) {
@@ -3460,7 +3480,12 @@ export const useStore = create<Store>()(
         
         // Find package that includes this service
         for (const pkg of activePackages) {
-          if (pkg.serviceIds.includes(serviceId)) {
+          const hasService = pkg.sessions.some((session) =>
+            session.items.some(
+              (item) => item.productType === 'service' && item.productId === serviceId,
+            ),
+          );
+          if (hasService) {
             return pkg;
           }
         }
@@ -3763,7 +3788,7 @@ export const useStore = create<Store>()(
           
           // Second pass: Add missing codes
           let codeCounter = 1;
-          state.appointments = state.appointments.map((apt, index) => {
+          state.appointments = state.appointments.map((apt) => {
             if (!apt.code) {
               // Generate code for old appointments
               const code = `LH${String(codeCounter).padStart(6, '0')}`;

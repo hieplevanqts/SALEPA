@@ -1,5 +1,4 @@
 import ConvenienceStoreRoutes from './router/index'
-import { useModuleCss } from '../../utils/useModuleCss'
 
 export default function ConvenienceStoreApp() {
   //   useModuleCss([
