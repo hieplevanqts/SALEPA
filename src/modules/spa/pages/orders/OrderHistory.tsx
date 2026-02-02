@@ -1,0 +1,1245 @@
+import { useState } from 'react';
+import { Search, Calendar, CreditCard, Eye, Trash2, Download, Printer, X, ArrowUpDown, ChevronDown, Package, ShoppingBag, TrendingUp, CheckCircle, Receipt, AlertCircle, ArrowUp, ArrowDown, DollarSign, Smartphone, QrCode, Zap, Check, Banknote, Edit2, Plus, Minus, ChevronLeft, ChevronRight, FileText, FileCheck } from 'lucide-react';
+import { useStore } from '../../../../lib/spa-lib/store';
+import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
+import { OrderDetailFullScreen } from './OrderDetailFullScreen';
+import { PrintReceipt } from '../../components/print/PrintReceipt';
+import { Pagination } from '../../components/common/Pagination';
+import { toast } from 'sonner';
+import type { Order } from '../../../../lib/spa-lib/store';
+import { QRPaymentForm } from '../../components/forms/QRPaymentForm';
+import { CardPaymentForm } from '../../components/forms/CardPaymentForm';
+import { InvoiceViewer } from '../../components/common/InvoiceViewer';
+import * as XLSX from 'xlsx';
+
+type SortField = 'date' | 'total' | 'items';
+type SortOrder = 'asc' | 'desc';
+type PaymentMethodType = 'cash' | 'card' | 'transfer' | 'momo' | 'zalopay' | 'vnpay';
+
+interface OrderHistoryProps {
+  onEditOrder?: () => void;
+}
+
+export function OrderHistory({ onEditOrder }: OrderHistoryProps = {}) {
+  const { orders: ordersRaw, selfServiceOrders: selfServiceOrdersRaw, deleteOrder, updateOrder, setEditingOrder } = useStore();
+  const { t } = useTranslation();
+  
+  // Normalize orders to arrays (handle persisted object format)
+  const orders = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
+  const selfServiceOrders = Array.isArray(selfServiceOrdersRaw) ? selfServiceOrdersRaw : Object.values(selfServiceOrdersRaw || {});
+  
+  console.log('OrderHistory - orders:', orders.length);
+  console.log('OrderHistory - ordersRaw:', ordersRaw);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [printOrder, setPrintOrder] = useState<Order | null>(null);
+  const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
+  const [invoiceViewOrder, setInvoiceViewOrder] = useState<Order | null>(null);
+  const [exportInvoiceConfirmOrder, setExportInvoiceConfirmOrder] = useState<Order | null>(null);
+  const [filterDate, setFilterDate] = useState('all');
+  const [filterPayment, setFilterPayment] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterInvoiceStatus, setFilterInvoiceStatus] = useState('all');
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [showCustomDate, setShowCustomDate] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [showDateRangePicker, setShowDateRangePicker] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectingStartDate, setSelectingStartDate] = useState(true);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  
+  // Payment modal states
+  const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('cash');
+  const [customerAmount, setCustomerAmount] = useState('');
+  const [paymentNote, setPaymentNote] = useState('');
+  
+  // Get current user info from localStorage
+  const currentUser = localStorage.getItem('salepa_username') || '';
+  
+  const paymentMethods = [
+    { id: 'cash' as const, label: t('cash') || 'Tiền mặt', icon: Banknote },
+    { id: 'card' as const, label: t('card') || 'Thẻ', icon: CreditCard },
+    { id: 'transfer' as const, label: t('transfer') || 'Chuyển khoản', icon: CreditCard },
+    { id: 'momo' as const, label: 'MoMo', icon: Smartphone },
+    { id: 'zalopay' as const, label: 'ZaloPay', icon: QrCode },
+    { id: 'vnpay' as const, label: 'VNPay', icon: Zap },
+  ];
+
+  const getDateRange = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (filterDate === 'custom' && customStartDate && customEndDate) {
+      return {
+        start: new Date(customStartDate),
+        end: new Date(customEndDate + ' 23:59:59')
+      };
+    }
+    
+    switch (filterDate) {
+      case 'today':
+        return { start: today, end: new Date() };
+      case 'yesterday': {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return { start: yesterday, end: today };
+      }
+      case 'week': {
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return { start: weekAgo, end: new Date() };
+      }
+      case 'month': {
+        const monthAgo = new Date(today);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        return { start: monthAgo, end: new Date() };
+      }
+      default:
+        return null;
+    }
+  };
+
+  const filteredOrders = orders
+    .filter((order) => {
+      const matchesSearch =
+        order.id.includes(searchQuery) ||
+        order.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customerPhone?.includes(searchQuery);
+      
+      const dateRange = getDateRange();
+      const matchesDate = !dateRange || (
+        new Date(order.date) >= dateRange.start && 
+        new Date(order.date) <= dateRange.end
+      );
+      
+      const matchesPayment = filterPayment === 'all' || order.paymentMethod === filterPayment;
+      
+      // Filter by payment status (paid/debt)
+      const receivedAmount = order.receivedAmount || order.paidAmount || 0;
+      const matchesStatus = filterStatus === 'all' || 
+        (filterStatus === 'paid' && receivedAmount >= order.total) ||
+        (filterStatus === 'debt' && receivedAmount < order.total);
+      
+      // Filter by invoice status
+      const matchesInvoiceStatus = filterInvoiceStatus === 'all' || 
+        (filterInvoiceStatus === 'none' && (order.invoiceStatus === null || order.invoiceStatus === undefined)) ||
+        order.invoiceStatus === filterInvoiceStatus;
+      
+      return matchesSearch && matchesDate && matchesPayment && matchesStatus && matchesInvoiceStatus;
+    })
+    .sort((a, b) => {
+      let aValue: any = sortField === 'date' ? new Date(a.date).getTime() : 
+                       sortField === 'total' ? a.total : 
+                       (Array.isArray(a.items) ? a.items.length : Object.keys(a.items || {}).length);
+      let bValue: any = sortField === 'date' ? new Date(b.date).getTime() : 
+                       sortField === 'total' ? b.total : 
+                       (Array.isArray(b.items) ? b.items.length : Object.keys(b.items || {}).length);
+      
+      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = () => {
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  // Statistics
+  const cashOrders = filteredOrders.filter(o => o.paymentMethod === 'cash').length;
+  const cardOrders = filteredOrders.filter(o => o.paymentMethod === 'card').length;
+  const transferOrders = filteredOrders.filter(o => o.paymentMethod === 'transfer').length;
+  
+  const stats = {
+    totalOrders: filteredOrders.length,
+    totalRevenue: filteredOrders.reduce((sum, order) => sum + order.total, 0),
+    totalDiscount: filteredOrders.reduce((sum, order) => sum + order.discount, 0),
+    completedOrders: filteredOrders.filter(o => (o.status || 'completed') === 'completed').length,
+    pendingOrders: filteredOrders.filter(o => o.status === 'pending').length,
+    avgOrderValue: filteredOrders.length > 0 
+      ? filteredOrders.reduce((sum, order) => sum + order.total, 0) / filteredOrders.length 
+      : 0,
+    totalDebt: filteredOrders.reduce((sum, order) => {
+      const receivedAmount = order.receivedAmount || order.paidAmount || 0;
+      const debt = order.total - receivedAmount;
+      return sum + (debt > 0 ? debt : 0);
+    }, 0),
+    cashOrders,
+    cardOrders,
+    transferOrders,
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Order ID', 'Date', 'Customer', 'Phone', 'Payment', 'Items', 'Subtotal', 'Discount', 'Total', 'Invoice Status'];
+    const rows = filteredOrders.map(order => {
+      const invoiceStatusLabel = order.invoiceStatus === 'issued' ? 'Đã phát hành' : 
+                                  order.invoiceStatus === 'error' ? 'Phát hành lỗi' : 
+                                  'Chưa phát hành';
+      return [
+        order.id,
+        new Date(order.date).toLocaleString('vi-VN'),
+        order.customerName || t('walkInCustomer'),
+        order.customerPhone || '',
+        order.paymentMethod,
+        Array.isArray(order.items) ? order.items.length : Object.keys(order.items || {}).length,
+        order.subtotal,
+        order.discount,
+        order.total,
+        invoiceStatusLabel
+      ];
+    });
+    
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  // Export to Excel function with full details
+  const handleExportExcel = () => {
+    try {
+      const workbook = XLSX.utils.book_new();
+      
+      // Prepare data for export
+      const exportData = filteredOrders.map(order => {
+        const receivedAmount = order.receivedAmount || order.paidAmount || 0;
+        const remainingDebt = order.total - receivedAmount;
+        
+        // Format payment method
+        let paymentMethodLabel = '';
+        switch (order.paymentMethod) {
+          case 'cash': paymentMethodLabel = 'Tiền mặt'; break;
+          case 'card': paymentMethodLabel = 'Thẻ'; break;
+          case 'transfer': paymentMethodLabel = 'Chuyển khoản'; break;
+          case 'momo': paymentMethodLabel = 'MoMo'; break;
+          case 'zalopay': paymentMethodLabel = 'ZaloPay'; break;
+          case 'vnpay': paymentMethodLabel = 'VNPay'; break;
+          default: paymentMethodLabel = order.paymentMethod || 'Không rõ';
+        }
+        
+        // Format invoice status
+        let invoiceStatusLabel = '';
+        if (order.invoiceStatus === null || order.invoiceStatus === undefined) {
+          invoiceStatusLabel = 'Không xuất HĐDT';
+        } else if (order.invoiceStatus === 'not_issued') {
+          invoiceStatusLabel = 'Chưa phát hành';
+        } else if (order.invoiceStatus === 'issued') {
+          invoiceStatusLabel = 'Đã phát hành';
+        } else if (order.invoiceStatus === 'error') {
+          invoiceStatusLabel = 'Phát hành lỗi';
+        }
+        
+        // Format payment status - Sync with filter logic
+        // paid: receivedAmount >= order.total → "Đã hoàn thành"
+        // debt: receivedAmount < order.total → "Còn nợ"
+        const paymentStatus = receivedAmount >= order.total ? '��ã hoàn thành' : 'Còn nợ';
+        
+        return {
+          'Mã hóa đơn': order.id.slice(-8).toUpperCase(),
+          'Ngày tạo': new Date(order.date).toLocaleString('vi-VN'),
+          'Khách hàng': order.customerName || 'Khách vãng lai',
+          'Số điện thoại': order.customerPhone || '',
+          'Người tạo': order.createdBy || 'Hệ thống',
+          'Phương thức thanh toán': paymentMethodLabel,
+          'Số sản phẩm': Array.isArray(order.items) ? order.items.length : Object.keys(order.items || {}).length,
+          'Tiền hàng': order.subtotal || 0,
+          'Giảm giá': (order.discount || 0) + (order.voucherDiscount || 0),
+          'Tổng thanh toán': order.total,
+          'Khách đã trả': receivedAmount,
+          'Còn thiếu': remainingDebt > 0 ? remainingDebt : 0,
+          'Trạng thái thanh toán': paymentStatus,
+          'Trạng thái HĐDT': invoiceStatusLabel
+        };
+      });
+      
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      
+      // Set column widths
+      worksheet['!cols'] = [
+        { wch: 15 }, // Mã hóa đơn
+        { wch: 20 }, // Ngày tạo
+        { wch: 25 }, // Khách hàng
+        { wch: 15 }, // SĐT
+        { wch: 15 }, // Người tạo
+        { wch: 20 }, // Phương thức TT
+        { wch: 12 }, // Số SP
+        { wch: 15 }, // Tiền hàng
+        { wch: 12 }, // Giảm giá
+        { wch: 15 }, // Tổng TT
+        { wch: 15 }, // Khách đã trả
+        { wch: 12 }, // Còn thiếu
+        { wch: 20 }, // TT thanh toán
+        { wch: 18 }  // TT HĐDT
+      ];
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Hóa đơn');
+      
+      // Generate file name with current date
+      const today = new Date();
+      const dateStr = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+      const fileName = `DanhSachHoaDon_${dateStr}.xlsx`;
+      
+      XLSX.writeFile(workbook, fileName);
+      
+      toast.success(`✅ Đã xuất ${filteredOrders.length} hóa đơn ra file Excel!`, {
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('❌ Có lỗi xảy ra khi xuất Excel!', {
+        duration: 3000,
+      });
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  };
+
+  const getPaymentLabel = (method: string) => {
+    switch (method) {
+      case 'cash': return t('cash');
+      case 'card': return t('card');
+      case 'transfer': return t('transfer');
+      case 'momo': return 'MoMo';
+      case 'zalopay': return 'ZaloPay';
+      case 'vnpay': return 'VNPay';
+      default: return method;
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 opacity-30" />;
+    return sortOrder === 'asc' 
+      ? <ArrowUp className="w-4 h-4 text-orange-600" />
+      : <ArrowDown className="w-4 h-4 text-orange-600" />;
+  };
+
+  // Calendar helper functions
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    return { daysInMonth, startingDayOfWeek, year, month };
+  };
+
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  };
+
+  const isInRange = (date: Date, start: string, end: string) => {
+    if (!start || !end) return false;
+    const checkDate = new Date(date);
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    checkDate.setHours(0, 0, 0, 0);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+    return checkDate >= startDate && checkDate <= endDate;
+  };
+
+  const handleDateClick = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    
+    if (selectingStartDate || !customStartDate) {
+      setCustomStartDate(dateString);
+      setCustomEndDate('');
+      setSelectingStartDate(false);
+    } else {
+      const start = new Date(customStartDate);
+      const end = new Date(dateString);
+      
+      if (end >= start) {
+        setCustomEndDate(dateString);
+        setSelectingStartDate(true);
+      } else {
+        setCustomStartDate(dateString);
+        setCustomEndDate('');
+        setSelectingStartDate(false);
+      }
+    }
+  };
+
+  const renderCalendar = () => {
+    const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
+    const days = [];
+    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+    // Empty cells for days before the first day of month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(<div key={`empty-${i}`} className="h-5"></div>);
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dateString = date.toISOString().split('T')[0];
+      const isStart = customStartDate === dateString;
+      const isEnd = customEndDate === dateString;
+      const inRange = isInRange(date, customStartDate, customEndDate);
+      const isToday = isSameDay(date, new Date());
+
+      days.push(
+        <button
+          key={day}
+          onClick={() => handleDateClick(date)}
+          className={`h-5 flex items-center justify-center rounded text-[10px] transition-colors ${
+            isStart || isEnd
+              ? 'bg-[#FE7410] text-white font-bold'
+              : inRange
+              ? 'bg-orange-100 text-orange-900'
+              : isToday
+              ? 'bg-gray-100 font-semibold'
+              : 'hover:bg-gray-100'
+          }`}
+        >
+          {day}
+        </button>
+      );
+    }
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <button
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+            className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+          <div className="font-semibold text-gray-900 text-xs">
+            Tháng {currentMonth.getMonth() + 1}, {currentMonth.getFullYear()}
+          </div>
+          <button
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+            className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+        </div>
+        
+        {/* Day names */}
+        <div className="grid grid-cols-7 gap-0.5 mb-0.5">
+          {dayNames.map(name => (
+            <div key={name} className="h-4 flex items-center justify-center text-[9px] font-semibold text-gray-500">
+              {name}
+            </div>
+          ))}
+        </div>
+        
+        {/* Calendar days */}
+        <div className="grid grid-cols-7 gap-0.5">
+          {days}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Show full screen order detail */}
+      {selectedOrder ? (
+        <OrderDetailFullScreen
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onPrintReceipt={(order) => {
+            setPrintOrder(order);
+            setSelectedOrder(null);
+          }}
+          onDelete={(order) => {
+            setSelectedOrder(null);
+            setDeleteConfirmOrder(order);
+          }}
+        />
+      ) : (
+        <>
+          {/* Header */}
+          <div className="mb-6 flex justify-between items-start">
+            <div>
+              <h2 className="page-title">{t('invoiceManagement')}</h2>
+              <p className="text-gray-500 text-sm mt-2">
+                {filteredOrders.length} / {orders.length} {t('orders')}
+              </p>
+            </div>
+            
+            {/* Export Excel Button */}
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-lg transition-colors font-medium border-2"
+              style={{ borderColor: '#FE7410', color: '#FE7410' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FFF7ED'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+            >
+              <Download className="w-5 h-5" />
+              Xuất Excel
+            </button>
+          </div>
+          
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{t('totalInvoices')}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalOrders}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <ShoppingBag className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{t('totalRevenue')}</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">
+                    {(stats.totalRevenue / 1000000).toFixed(1)}M{t('vnd')}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{t('paidInvoices')}</p>
+                  <p className="text-2xl font-bold text-purple-600 mt-1">{stats.completedOrders}</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </div>
+
+            
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{t('debtValue') || 'Giá trị công nợ'}</p>
+                  <p className="text-2xl font-bold text-red-600 mt-1">
+                    {stats.totalDebt > 0 ? `${(stats.totalDebt / 1000).toFixed(0)}K${t('vnd')}` : `0${t('vnd')}`}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="p-4 mb-6 bg-[rgb(255,255,255)] rounded-[10px]">
+            <div className="flex flex-wrap gap-4">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[300px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder={t('searchOrder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+              
+              {/* Date Filter */}
+              <select
+                value={filterDate}
+                onChange={(e) => {
+                  setFilterDate(e.target.value);
+                  if (e.target.value === 'custom') {
+                    setShowCustomDate(true);
+                  } else {
+                    setShowCustomDate(false);
+                  }
+                }}
+                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent min-w-[150px]"
+              >
+                <option value="all">{t('allTime')}</option>
+                <option value="today">{t('today')}</option>
+                <option value="yesterday">{t('yesterday')}</option>
+                <option value="week">{t('last7Days')}</option>
+                <option value="month">{t('last30Days')}</option>
+                <option value="custom">{t('customDate')}</option>
+              </select>
+
+              {/* Payment Filter */}
+              <select
+                value={filterPayment}
+                onChange={(e) => setFilterPayment(e.target.value)}
+                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent min-w-[150px]"
+              >
+                <option value="all">{t('allPaymentMethods')}</option>
+                <option value="cash">{t('cash')}</option>
+                <option value="card">{t('card')}</option>
+                <option value="transfer">{t('transfer')}</option>
+                <option value="momo">MoMo</option>
+                <option value="zalopay">ZaloPay</option>
+                <option value="vnpay">VNPay</option>
+              </select>
+
+              {/* Payment Status Filter */}
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent min-w-[150px]"
+              >
+                <option value="all">{t('allPaymentStatus') || 'Tất cả trạng thái'}</option>
+                <option value="paid">{t('paidComplete') || 'Đã hoàn thành'}</option>
+                <option value="debt">{t('hasDebt') || 'Còn nợ'}</option>
+              </select>
+
+              {/* Invoice Status Filter */}
+              <select
+                value={filterInvoiceStatus}
+                onChange={(e) => setFilterInvoiceStatus(e.target.value)}
+                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent min-w-[180px]"
+              >
+                <option value="all">{t('allInvoiceStatus') || 'Tất cả trạng thái HDDT'}</option>
+                <option value="none">{t('noInvoice') || 'Không xuất HDDT'}</option>
+                <option value="not_issued">{t('notIssued') || 'Chưa phát hành'}</option>
+                <option value="issued">{t('issued') || 'Đã phát hành'}</option>
+                <option value="error">{t('error') || 'Phát hành lỗi'}</option>
+              </select>
+
+              {/* Custom Date Range */}
+              {showCustomDate && (
+                <div className="relative min-w-[250px]">
+                  <button
+                    onClick={() => setShowDateRangePicker(!showDateRangePicker)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent flex items-center gap-2 hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    <Calendar className="w-5 h-5 text-gray-400" />
+                    <span className="text-gray-700 flex-1 text-left">
+                      {customStartDate && customEndDate 
+                        ? `${new Date(customStartDate).toLocaleDateString('vi-VN')} - ${new Date(customEndDate).toLocaleDateString('vi-VN')}`
+                        : 'Chọn khoảng thời gian'}
+                    </span>
+                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showDateRangePicker ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Date Range Picker Popup */}
+                  {showDateRangePicker && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2.5 z-50">
+                      {renderCalendar()}
+                      
+                      <div className="flex gap-2 pt-2.5 mt-2.5 border-t">
+                        <button
+                          onClick={() => {
+                            setCustomStartDate('');
+                            setCustomEndDate('');
+                            setSelectingStartDate(true);
+                            setShowDateRangePicker(false);
+                          }}
+                          className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-xs font-medium"
+                        >
+                          Xóa
+                        </button>
+                        <button
+                          onClick={() => setShowDateRangePicker(false)}
+                          disabled={!customStartDate || !customEndDate}
+                          className="flex-1 px-2.5 py-1.5 bg-[#FE7410] text-white rounded-lg hover:bg-[#E56809] transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Áp dụng
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Orders Table */}
+          {filteredOrders.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+              <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500">
+                {orders.length === 0 ? t('noOrders') : t('notFound')}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th className="table-header text-center">
+                        <button
+                          onClick={() => handleSort('date')}
+                          className="flex items-center gap-2 hover:text-orange-600 mx-auto"
+                        >
+                          NGÀY TẠO
+                          <SortIcon field="date" />
+                        </button>
+                      </th>
+                      <th className="table-header">MÃ HÓA ĐƠN</th>
+                      <th className="table-header">KHÁCH HÀNG</th>
+                      <th className="table-header">NGƯỜI TẠO</th>
+                      <th className="table-header text-center">THANH TOÁN</th>
+                      <th className="table-header text-right">
+                        <button
+                          onClick={() => handleSort('items')}
+                          className="flex items-center gap-2 hover:text-orange-600 ml-auto"
+                        >
+                          SỐ SP
+                          <SortIcon field="items" />
+                        </button>
+                      </th>
+                      <th className="table-header text-right">
+                        <button
+                          onClick={() => handleSort('total')}
+                          className="flex items-center gap-2 hover:text-orange-600 ml-auto"
+                        >
+                          TỔNG THANH TOÁN
+                          <SortIcon field="total" />
+                        </button>
+                      </th>
+                      <th className="table-header text-right">GIẢM GIÁ</th>
+                      <th className="table-header text-right">KHÁCH ĐÃ TRẢ</th>
+                      <th className="table-header text-center">TRẠNG THÁI HDDT</th>
+                      <th className="table-header actions-center">THAO TÁC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedOrders.map((order) => {
+                      const receivedAmount = order.receivedAmount || order.paidAmount || 0;
+                      const isUnderPaid = receivedAmount < order.total && receivedAmount !== order.total;
+                      
+                      // Display amount: if paid more than total, show total; otherwise show actual amount
+                      const displayAmount = receivedAmount > order.total ? order.total : receivedAmount;
+                      
+                      return (
+                        <tr key={order.id}>
+                          <td className="table-content text-center">
+                            {formatDate(order.date)}
+                          </td>
+                          <td className="table-content">
+                            {order.id.slice(-8).toUpperCase()}
+                          </td>
+                          <td className="table-content">
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {order.customerName || t('walkInCustomer')}
+                              </div>
+                              {order.customerPhone && (
+                                <div className="text-xs text-gray-500">{order.customerPhone}</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="table-content">{order.createdBy || 'Hệ thống'}</td>
+                          <td className="table-content text-center">
+                            {order.paymentMethod ? getPaymentLabel(order.paymentMethod) : (
+                              <span className="text-gray-400 italic">Không rõ</span>
+                            )}
+                          </td>
+                          <td className="table-content text-right">
+                            {Array.isArray(order.items) ? order.items.length : Object.keys(order.items || {}).length}
+                          </td>
+                          <td className="table-content font-semibold text-right">
+                            <div className="text-[rgb(17,24,39)] font-bold font-normal">
+                              {order.total.toLocaleString('vi-VN')}{t('vnd')}
+                            </div>
+                          </td>
+                          <td className="table-content text-right">
+                            {(() => {
+                              const totalDiscount = (order.discount || 0) + (order.voucherDiscount || 0);
+                              return totalDiscount > 0 ? (
+                                <span className="text-red-600 font-medium">
+                                  -{totalDiscount.toLocaleString('vi-VN')}{t('vnd')}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">0{t('vnd')}</span>
+                              );
+                            })()}
+                          </td>
+                          <td className="table-content text-right">
+                            <span className={`font-medium ${isUnderPaid || receivedAmount === 0 ? 'text-red-600' : 'text-green-600'}`}>
+                              {displayAmount.toLocaleString('vi-VN')}{t('vnd')}
+                            </span>
+                          </td>
+                          <td className="table-content text-center text-[16px]">
+                            {order.invoiceStatus === null || order.invoiceStatus === undefined ? (
+                              <span className="text-gray-400">—</span>
+                            ) : (() => {
+                              const status = order.invoiceStatus;
+                              const statusConfig = {
+                                'not_issued': { label: 'Chưa phát hành', color: 'text-yellow-700', bg: 'bg-yellow-100' },
+                                'issued': { label: 'Đã phát hành', color: 'text-green-600', bg: 'bg-green-100' },
+                                'error': { label: 'Phát hành lỗi', color: 'text-red-600', bg: 'bg-red-100' }
+                              };
+                              const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['not_issued'];
+                              return (
+                                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.color}`}>
+                                  {config.label}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td className="actions-center">
+                            <div className="flex gap-2 justify-center">
+                              {/* Export Invoice button - only show if invoiceStatus is null AND has customer info (not guest customer) */}
+                              {(order.invoiceStatus === null || order.invoiceStatus === undefined) && 
+                               order.customerName && 
+                               order.customerPhone && (
+                                <button
+                                  onClick={() => setExportInvoiceConfirmOrder(order)}
+                                  className="action-icon p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                  title="Xuất HDDT"
+                                >
+                                  <FileCheck className="w-5 h-5 text-gray-600" />
+                                </button>
+                              )}
+                              {/* Collect Payment button - only show if underpaid */}
+                              {isUnderPaid && (
+                                <button
+                                  onClick={() => {
+                                    setPaymentOrder(order);
+                                    const remaining = order.total - receivedAmount;
+                                    setCustomerAmount(remaining.toString());
+                                    setPaymentMethod('cash');
+                                    setPaymentNote('');
+                                  }}
+                                  className="action-icon p-2 hover:bg-orange-100 rounded-lg transition-colors"
+                                  title={t('collectPayment') || 'Thu tiền'}
+                                >
+                                  <DollarSign className="w-5 h-5 text-orange-600" style={{ color: '#FE7410' }} />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setSelectedOrder(order)}
+                                className="action-icon p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                title={t('viewDetails')}
+                              >
+                                <Eye className="w-5 h-5 text-gray-600" />
+                              </button>
+                              {/* View Invoice button - only show if invoiceStatus exists */}
+                              {order.invoiceStatus !== null && order.invoiceStatus !== undefined && (
+                                <button
+                                  onClick={() => setInvoiceViewOrder(order)}
+                                  className="action-icon p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                  title="Xem HĐDT"
+                                >
+                                  <FileText className="w-5 h-5 text-gray-600" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setPrintOrder(order)}
+                                className="action-icon p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                title={t('printReceipt')}
+                              >
+                                <Printer className="w-5 h-5 text-gray-600" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirmOrder(order)}
+                                className="action-icon p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                title={t('deleteOrder')}
+                              >
+                                <Trash2 className="w-5 h-5 text-red-600" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredOrders.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
+          )}
+
+          {/* Print Receipt Modal */}
+          {printOrder && (
+            <PrintReceipt
+              order={printOrder}
+              onClose={() => setPrintOrder(null)}
+            />
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {deleteConfirmOrder && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{t('deleteOrder') || 'Xóa hóa đơn'}</h3>
+                  </div>
+                </div>
+
+                
+
+                <p className="text-gray-700 mb-6">
+                  {t('deleteOrderConfirm') || 'Bạn có chắc chắn muốn xóa hóa đơn này không? Tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn.'}
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDeleteConfirmOrder(null)}
+                    className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    {t('cancel') || 'Hủy'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      deleteOrder(deleteConfirmOrder.id);
+                      setDeleteConfirmOrder(null);
+                    }}
+                    className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {t('delete') || 'Xóa'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Payment Modal */}
+          {paymentOrder && (() => {
+            const receivedAmount = paymentOrder.receivedAmount || paymentOrder.paidAmount || 0;
+            const remainingAmount = paymentOrder.total - receivedAmount;
+            const change = customerAmount ? parseFloat(customerAmount) - remainingAmount : 0;
+            
+            const handleCompletePayment = () => {
+              const additionalAmount = parseFloat(customerAmount || '0');
+              const newReceivedAmount = receivedAmount + additionalAmount;
+              const newChangeAmount = newReceivedAmount - paymentOrder.total;
+
+              // Create payment history entry
+              const paymentHistoryEntry: any = {
+                id: `PAY-${Date.now()}`,
+                amount: additionalAmount,
+                paymentMethod: paymentMethod,
+                paidAt: new Date().toISOString(),
+                paidBy: currentUser,
+                note: paymentNote,
+                changeAmount: newChangeAmount,
+              };
+
+              // Update order with new payment info
+              const existingPaymentHistory = paymentOrder.paymentHistory || [];
+              updateOrder(paymentOrder.id, {
+                receivedAmount: newReceivedAmount,
+                changeAmount: newChangeAmount,
+                status: newReceivedAmount >= paymentOrder.total ? 'completed' : 'pending',
+                paymentMethod: paymentMethod,
+                paymentHistory: [...existingPaymentHistory, paymentHistoryEntry],
+              });
+
+              toast.success('✅ Thu tiền thành công!', {
+                description: `Số tiền thu: ${additionalAmount.toLocaleString()}đ${newChangeAmount > 0 ? ` | Tiền thừa: ${newChangeAmount.toLocaleString()}đ` : newChangeAmount < 0 ? ` | Còn thiếu: ${Math.abs(newChangeAmount).toLocaleString()}đ` : ''}`,
+                duration: 3000,
+              });
+
+              setPaymentOrder(null);
+              setCustomerAmount('');
+              setPaymentNote('');
+            };
+            
+            return (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+                <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+                  {/* Header */}
+                  <div className="border-b-2 p-6 rounded-t-2xl flex-shrink-0" style={{ backgroundColor: '#FFF7ED', borderColor: '#FE7410' }}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h2 className="text-2xl font-bold" style={{ color: '#FE7410' }}>{t('collectPayment') || 'Thu tiền bổ sung'}</h2>
+                        <p className="text-sm mt-1" style={{ color: '#E56809' }}>
+                          Còn thiếu: <span className="font-bold">{remainingAmount.toLocaleString()}đ</span>
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => setPaymentOrder(null)} 
+                        className="p-2 rounded-lg transition-all" 
+                        style={{ color: '#FE7410' }} 
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FFEDD5'} 
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Scrollable Content */}
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="space-y-6">
+                      {/* Payment Methods */}
+                      <div>
+                        <label className="block text-base font-semibold text-gray-700 mb-3">
+                          {t('paymentMethod') || 'Phương thức thanh toán'}
+                        </label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {paymentMethods.map((method) => (
+                            <button
+                              key={method.id}
+                              onClick={() => setPaymentMethod(method.id)}
+                              className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                                paymentMethod === method.id
+                                  ? 'shadow-md'
+                                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                              }`}
+                              style={paymentMethod === method.id ? { borderColor: '#FE7410', backgroundColor: '#FFF7ED' } : {}}
+                            >
+                              <div className="w-12 h-12 rounded-lg flex items-center justify-center"
+                                style={{ backgroundColor: paymentMethod === method.id ? '#FE7410' : '#E5E7EB' }}
+                              >
+                                <method.icon className={`w-6 h-6 ${paymentMethod === method.id ? 'text-white' : 'text-gray-600'}`} />
+                              </div>
+                              <span className="font-semibold text-gray-900 text-sm text-center">{method.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* QR Code & Card Payment Forms - Show FIRST before customer amount input */}
+                      {paymentMethod === 'card' && (
+                        <div>
+                          <CardPaymentForm
+                            amount={remainingAmount}
+                            onSuccess={(data) => {
+                              handleCompletePayment();
+                            }}
+                            onCancel={() => setPaymentMethod('cash')}
+                          />
+                        </div>
+                      )}
+
+                      {(paymentMethod === 'transfer' || paymentMethod === 'momo' || paymentMethod === 'zalopay' || paymentMethod === 'vnpay') && (
+                        <div>
+                          <QRPaymentForm
+                            amount={remainingAmount}
+                            orderCode={`${paymentOrder.id}-${Date.now()}`}
+                            paymentType={paymentMethod}
+                            onSuccess={(data) => {
+                              handleCompletePayment();
+                            }}
+                            onCancel={() => setPaymentMethod('cash')}
+                          />
+                        </div>
+                      )}
+
+                      {/* Customer Amount - Show for ALL payment methods */}
+                      <div>
+                        <label className="block text-base font-semibold text-gray-700 mb-3">
+                        {t('customerAmount') || 'Tiền khách đưa'}
+                        </label>
+                        <input
+                          type="number"
+                          value={customerAmount}
+                          onChange={(e) => setCustomerAmount(e.target.value)}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none text-xl font-semibold"
+                          onFocus={(e) => e.currentTarget.style.borderColor = '#FE7410'}
+                          onBlur={(e) => e.currentTarget.style.borderColor = '#D1D5DB'}
+                          placeholder="0"
+                        />
+
+                        {/* Change or Remaining */}
+                        {customerAmount && parseFloat(customerAmount) > remainingAmount && (
+                          <div className="mt-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-700 font-semibold text-base">{t('change') || 'Tiền thừa trả khách'}:</span>
+                              <span className="text-3xl font-bold text-green-600">
+                                {(parseFloat(customerAmount) - remainingAmount).toLocaleString()}đ
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {customerAmount && parseFloat(customerAmount) < remainingAmount && (
+                          <div className="mt-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                            <div className="flex justify-between items-center">
+                              <span className="text-red-700 font-semibold text-base">Vẫn còn thiếu:</span>
+                              <span className="text-3xl font-bold text-red-600">
+                                {(remainingAmount - parseFloat(customerAmount)).toLocaleString()}đ
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Order Summary */}
+                      <div className="rounded-xl p-5 border-2" style={{ backgroundColor: '#FFF7ED', borderColor: '#FE7410' }}>
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-base text-gray-700">
+                            <span>{t('totalPayment') || 'Tổng thanh toán'}:</span>
+                            <span className="font-semibold text-lg">{paymentOrder.total.toLocaleString()}đ</span>
+                          </div>
+                          <div className="flex justify-between text-base text-gray-700">
+                            <span>{t('customerPaid') || 'Khách đã trả'}:</span>
+                            <span className="font-semibold text-lg">{receivedAmount.toLocaleString()}đ</span>
+                          </div>
+                          <div className="border-t-2 pt-3 flex justify-between items-center" style={{ borderColor: '#FE7410' }}>
+                            <span className="text-xl font-bold text-gray-900">{t('remaining') || 'Còn thiếu'}:</span>
+                            <span className="text-3xl font-bold" style={{ color: '#FE7410' }}>
+                              {remainingAmount.toLocaleString()}đ
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Payment Note */}
+                      <div>
+                        <label className="block text-base font-semibold text-gray-700 mb-3">
+                          {t('note') || 'Ghi chú'}
+                        </label>
+                        <textarea
+                          value={paymentNote}
+                          onChange={(e) => setPaymentNote(e.target.value)}
+                          placeholder={t('addNoteOptional') || 'Thêm ghi chú cho lần thu tiền này...'}
+                          rows={3}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none text-base resize-none"
+                          onFocus={(e) => e.currentTarget.style.borderColor = '#FE7410'}
+                          onBlur={(e) => e.currentTarget.style.borderColor = '#D1D5DB'}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer with Complete Button */}
+                  <div className="border-t-2 border-gray-200 p-6 flex-shrink-0">
+                    <button
+                      onClick={handleCompletePayment}
+                      disabled={!customerAmount || parseFloat(customerAmount) <= 0}
+                      className="w-full text-white py-4 rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-3 text-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: '#FE7410' }}
+                    >
+                      <Check className="w-6 h-6" />
+                      {t('completePayment') || 'Hoàn thành thu tiền'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          
+          {/* Invoice Viewer Modal */}
+          {invoiceViewOrder && (
+            <InvoiceViewer
+              order={invoiceViewOrder}
+              onClose={() => setInvoiceViewOrder(null)}
+            />
+          )}
+          
+          {/* Export Invoice Confirmation Modal */}
+          {exportInvoiceConfirmOrder && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <FileCheck className="w-6 h-6" style={{ color: '#FE7410' }} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Xác nhận xuất HĐDT</h3>
+                  </div>
+                </div>
+
+                <p className="text-gray-700 mb-2">
+                  Bạn có chắc chắn muốn xuất hóa đơn điện tử cho đơn hàng này không?
+                </p>
+                
+               
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setExportInvoiceConfirmOrder(null)}
+                    className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Update order status from null to 'not_issued'
+                      updateOrder(exportInvoiceConfirmOrder.id, {
+                        invoiceStatus: 'not_issued'
+                      });
+                      
+                      toast.success('✅ Đã đánh dấu xuất HĐDT', {
+                        description: `Đơn hàng ${exportInvoiceConfirmOrder.id.slice(-8).toUpperCase()} đã được đánh dấu để xuất hóa đơn điện tử`,
+                        duration: 3000,
+                      });
+                      
+                      setExportInvoiceConfirmOrder(null);
+                    }}
+                    className="flex-1 px-4 py-3 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                    style={{ backgroundColor: '#FE7410' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E56809'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FE7410'}
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+export default OrderHistory;

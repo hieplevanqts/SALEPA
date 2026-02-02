@@ -1,0 +1,14 @@
+# Supabase Configuration - DISABLED
+# This application does not use Supabase
+
+[api]
+enabled = false
+
+[db]
+enabled = false
+
+[functions]
+enabled = false
+
+[functions.server]
+enabled = false
