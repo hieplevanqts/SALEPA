@@ -241,6 +241,7 @@ export interface SelfServiceOrder extends Order {
 }
 
 export interface AppointmentService {
+  instanceId?: string;
   productId: string;
   productName: string;
   productType: 'product' | 'service' | 'treatment';

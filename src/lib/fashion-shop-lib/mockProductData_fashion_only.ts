@@ -5,8 +5,7 @@
 
 import { 
   generateSKU, 
-  generateVariantTitle,
-  calculateTotalStock 
+  generateVariantTitle 
 } from './variantUtils';
 
 // 🔥 LOCAL STORAGE HELPERS - Persist mock data across page reloads
@@ -144,7 +143,9 @@ export interface ProductVariant {
   cost_price: number | null;
   price: number | null;
   prices: { vnd: number; usd: number } | null;
-  // 🔥 REMOVED: quantity, waiting_quantity - Tồn kho CHỈ lưu trong Inventory
+  // 🔥 Inventory is stored separately; keep optional fields for mock seeds
+  quantity?: number;
+  waiting_quantity?: number;
   status: 0 | 1;
   is_sold_out: boolean;
   created_at: string;
@@ -445,7 +446,7 @@ const initialProducts: Product[] = [
     quantity: 200, waiting_quantity: 0, min_stock: 50,
     is_sold_out: false, status: 1,
     image: fashionImageUrls[5], other_images: [fashionImageUrls[5]],
-    brand: null, categories: 'Giày dép > Dép & Sandal',
+    brand: undefined, categories: 'Giày dép > Dép & Sandal',
     weight: 150, location: 'Kệ B4',
     order_product_count: 89, last_sold: '2024-01-21',
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null,
@@ -463,7 +464,7 @@ const initialProducts: Product[] = [
     quantity: 3, waiting_quantity: 0, min_stock: 1,
     is_sold_out: false, status: 1,
     image: fashionImageUrls[6], other_images: [fashionImageUrls[6]],
-    brand: 'Chanel', categories: null,
+    brand: 'Chanel', categories: undefined,
     weight: 100, location: 'Tủ kính VIP',
     order_product_count: 2, last_sold: '2023-12-20',
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null,
@@ -553,7 +554,7 @@ const initialProducts: Product[] = [
     quantity: 180, waiting_quantity: 0, min_stock: 40,
     is_sold_out: false, status: 1,
     image: fashionImageUrls[0], other_images: [fashionImageUrls[0]],
-    brand: null, categories: null,
+    brand: undefined, categories: undefined,
     weight: 80, location: 'Kệ E1',
     order_product_count: 102, last_sold: '2024-01-21',
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null,
@@ -571,7 +572,7 @@ const initialProducts: Product[] = [
     quantity: 55, waiting_quantity: 10, min_stock: 20,
     is_sold_out: false, status: 1,
     image: fashionImageUrls[4], other_images: [fashionImageUrls[4]],
-    brand: 'Adidas', categories: null,
+    brand: 'Adidas', categories: undefined,
     weight: 200, location: 'Kệ F1',
     order_product_count: 39, last_sold: '2024-01-19',
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null,
@@ -1206,6 +1207,14 @@ export const mockDataService = {
     }
     return null;
   },
+  deleteProductBrand: async (id: string) => {
+    const index = mockProductBrands.findIndex(pb => pb._id === id);
+    if (index !== -1) {
+      mockProductBrands.splice(index, 1);
+      return true;
+    }
+    return false;
+  },
 
   // Product Properties
   getProductProperties: async () => mockProductProperties,
@@ -1222,6 +1231,14 @@ export const mockDataService = {
       return mockProductProperties[index];
     }
     return null;
+  },
+  deleteProductProperty: async (id: string) => {
+    const index = mockProductProperties.findIndex(pp => pp._id === id);
+    if (index !== -1) {
+      mockProductProperties.splice(index, 1);
+      return true;
+    }
+    return false;
   },
 
   // Product Variants
@@ -1299,6 +1316,14 @@ export const mockDataService = {
       return mockProductUnits[index];
     }
     return null;
+  },
+  deleteProductUnit: async (id: string) => {
+    const index = mockProductUnits.findIndex(pu => pu._id === id);
+    if (index !== -1) {
+      mockProductUnits.splice(index, 1);
+      return true;
+    }
+    return false;
   },
 
   // Product Property Values (Liên kết)

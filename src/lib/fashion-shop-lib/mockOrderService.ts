@@ -3,15 +3,12 @@
 // Service layer cho quản lý đơn hàng và kho
 // =====================================================
 
+import type { Order, OrderItem, InventoryTransaction } from './mockOrderData';
 import {
-  Order,
-  OrderItem,
-  InventoryTransaction,
   mockOrders,
   mockOrderItems,
   mockInventoryTransactions,
   getOrderItemsByOrderId,
-  getOrderWithItems,
 } from './mockOrderData';
 
 // =====================================================

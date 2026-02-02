@@ -54,12 +54,27 @@ export const mockApi = {
     return { success: result };
   },
 
+  // Product Tags
+  getProductTags: async () => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: true, data: [] };
+  },
+  getProductTag: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: false, data: undefined };
+  },
+
   // Products
   getProducts: async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: await mockDataService.getProducts() };
   },
   getProductById: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.getProductById(id);
+    return { success: !!result, data: result };
+  },
+  getProduct: async (id: string) => {
     await new Promise(resolve => setTimeout(resolve, 100));
     const result = await mockDataService.getProductById(id);
     return { success: !!result, data: result };
@@ -90,6 +105,11 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: await mockDataService.getProductBrands() };
   },
+  getProductBrand: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.getProductBrandById(id);
+    return { success: !!result, data: result };
+  },
   createProductBrand: async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 100));
     const result = await mockDataService.createProductBrand(data);
@@ -100,11 +120,21 @@ export const mockApi = {
     const result = await mockDataService.updateProductBrand(id, data);
     return { success: !!result, data: result };
   },
+  deleteProductBrand: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.deleteProductBrand(id);
+    return { success: result };
+  },
 
   // Product Properties
   getProductProperties: async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: await mockDataService.getProductProperties() };
+  },
+  getProductProperty: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.getProductPropertyById(id);
+    return { success: !!result, data: result };
   },
   createProductProperty: async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -115,6 +145,11 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     const result = await mockDataService.updateProductProperty(id, data);
     return { success: !!result, data: result };
+  },
+  deleteProductProperty: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.deleteProductProperty(id);
+    return { success: result };
   },
 
   // Product Variants
@@ -157,10 +192,45 @@ export const mockApi = {
     return { success: result };
   },
 
+  // Product Attribute Definitions
+  getProductAttributeDefinitions: async () => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: true, data: [] };
+  },
+  getProductAttributeDefinition: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: false, data: undefined };
+  },
+
+  // Product Attribute Values
+  getProductAttributeValues: async () => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: true, data: [] };
+  },
+  getProductAttributeValue: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: false, data: undefined };
+  },
+
+  // Product Suppliers
+  getProductSuppliers: async () => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: true, data: [] };
+  },
+  getProductSupplier: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: false, data: undefined };
+  },
+
   // Product Units
   getProductUnits: async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: await mockDataService.getProductUnits() };
+  },
+  getProductUnit: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.getProductUnitById(id);
+    return { success: !!result, data: result };
   },
   createProductUnit: async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -171,6 +241,11 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     const result = await mockDataService.updateProductUnit(id, data);
     return { success: !!result, data: result };
+  },
+  deleteProductUnit: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.deleteProductUnit(id);
+    return { success: result };
   },
 
   // Product Property Values (Liên kết)

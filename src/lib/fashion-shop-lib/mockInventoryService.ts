@@ -3,9 +3,8 @@
 // Service layer cho quản lý tồn kho
 // =====================================================
 
+import type { Inventory, InventoryTransaction } from './mockInventoryData';
 import {
-  Inventory,
-  InventoryTransaction,
   mockInventories,
   mockInventoryTransactions,
   saveInventoriesToStorage,
@@ -58,46 +57,6 @@ export class MockInventoryService {
     return mockInventories.filter(inv => inv.tenant_id === TENANT_ID);
   }
   
-  /**
-   * Sync inventories với tất cả variants
-   * Tạo inventory record cho các variants chưa có
-   */
-  private async syncInventoriesWithVariants(): Promise<void> {
-    try {
-      // Import variants dynamically để tránh circular dependency
-      const { mockProductVariants } = await import('./mockProductData_fashion_only');
-      const existingVariantIds = new Set(mockInventories.map(inv => inv.variant_id));
-      
-      for (const variant of mockProductVariants) {
-        if (!existingVariantIds.has(variant._id)) {
-          // Create inventory for variant
-          const now = new Date().toISOString();
-          const newInventory: Inventory = {
-            _id: `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            tenant_id: TENANT_ID,
-            variant_id: variant._id,
-            product_id: variant.product_id,
-            on_hand: variant.quantity || 0, // Sử dụng quantity từ variant làm giá trị ban đầu
-            reserved: 0,
-            incoming: 0,
-            available: variant.quantity || 0,
-            updated_at: now,
-          };
-          
-          mockInventories.push(newInventory);
-          console.log(`✅ [Inventory] Auto-created inventory for variant: ${variant.sku} (on_hand: ${newInventory.on_hand})`);
-        }
-      }
-      
-      // Save to storage if any new inventories were created
-      if (mockInventories.length > existingVariantIds.size) {
-        saveInventoriesToStorage();
-      }
-    } catch (error) {
-      console.error('Failed to sync inventories with variants:', error);
-    }
-  }
-
   /**
    * Lấy Inventory theo variant_id
    */
