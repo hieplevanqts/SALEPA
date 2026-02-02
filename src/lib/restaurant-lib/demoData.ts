@@ -1,4 +1,4 @@
-import type { Order, CustomerTreatmentPackage, Table } from './store';
+import type { Order, CustomerTreatmentPackage, Table, CartItem } from './store';
 
 // Helper function to create date with offset
 const getDateOffset = (hoursAgo: number): string => {
@@ -19,8 +19,25 @@ const getMinutesOffset = (minutesAgo: number): string => {
   return date.toISOString();
 };
 
+type RawCartItem = Omit<CartItem, 'discount' | 'category' | 'stock'> &
+  Partial<Pick<CartItem, 'discount' | 'category' | 'stock'>>;
+
+const toCartItem = (item: RawCartItem): CartItem => ({
+  discount: 0,
+  category: 'Khác',
+  stock: 0,
+  ...item,
+});
+
+const normalizeOrderItems = (
+  order: Omit<Order, 'items'> & { items: RawCartItem[] },
+): Order => ({
+  ...order,
+  items: order.items.map(toCartItem),
+});
+
 // Demo F&B Orders for Kitchen View
-export const demoFBOrders: Order[] = [
+const rawDemoFBOrders = [
   // Bàn 1 - Mới vào
   {
     id: 'FB001',
@@ -384,6 +401,9 @@ export const demoFBOrders: Order[] = [
     createdBy: 'Thu ngân',
   },
 ];
+
+export const demoFBOrders: Order[] =
+  rawDemoFBOrders.map(normalizeOrderItems);
 
 export const demoSpaOrders: Order[] = [
   // Pending orders - Chưa thanh toán

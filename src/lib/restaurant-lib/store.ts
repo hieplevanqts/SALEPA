@@ -363,6 +363,8 @@ export interface AppointmentService {
   // NEW: Multiple technicians assigned to this specific service
   technicianIds?: string[]; // Array of technician IDs
   technicianNames?: string[]; // Array of technician names
+  // Legacy single-tech fields
+  technicianId?: string;
   // ⭐ NEW: Time slot for each service
   startTime: string; // HH:mm format (e.g., "09:00")
   endTime: string;   // HH:mm format (e.g., "10:00")

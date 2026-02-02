@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
+import type { Order } from '../../../../lib/spa-lib/store';
 import { Search, Calendar, DollarSign, Package, Clock, CheckCircle, XCircle, CreditCard, Printer, ChevronDown, Users, MessageSquare, X } from 'lucide-react';
 import { CardPaymentForm, type CardData } from '../../components/forms/CardPaymentForm';
 import { QRPaymentForm, type QRPaymentData } from '../../components/forms/QRPaymentForm';
@@ -11,7 +12,9 @@ export function CashierOrderHistory() {
   const { t } = useTranslation();
   
   // Normalize orders to array (handle persisted object format)
-  const orders = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
+  const orders: Order[] = Array.isArray(ordersRaw)
+    ? ordersRaw
+    : (Object.values(ordersRaw || {}) as Order[]);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'week' | 'all'>('today');

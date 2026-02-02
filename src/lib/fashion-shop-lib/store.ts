@@ -117,6 +117,15 @@ export interface Order {
   createdBy?: string; // Người tạo hóa đơn
 }
 
+export type CreateOrderInput = Omit<
+  Order,
+  'id' | 'items' | 'subtotal' | 'total' | 'date' | 'timestamp' | 'discount'
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
+
 export interface Shift {
   id: string;
   openedBy: string;
@@ -248,6 +257,15 @@ export interface SelfServiceOrder extends Order {
   orderType: 'dine-in' | 'takeaway';
 }
 
+export type CreateSelfServiceOrderInput = Omit<
+  SelfServiceOrder,
+  'id' | 'items' | 'subtotal' | 'total' | 'date' | 'timestamp' | 'discount'
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
+
 export interface AppointmentService {
   instanceId?: string;
   productId: string;
@@ -273,14 +291,16 @@ export interface AppointmentService {
 
 export interface Appointment {
   id: string;
-  code: string; // Appointment code (e.g., "LH000001")
+  code?: string; // Appointment code (e.g., "LH000001")
   customerId: string;
   customerName: string;
   customerPhone: string;
   appointmentDate: string; // ISO date (YYYY-MM-DD)
-  startTime: string; // HH:mm format (e.g., "09:00")
-  endTime: string; // HH:mm format - calculated from duration
+  appointmentTime?: string; // Legacy time field
+  startTime?: string; // HH:mm format (e.g., "09:00")
+  endTime?: string; // HH:mm format - calculated from duration
   services: AppointmentService[];
+  totalDuration?: number;
   technicianId?: string; // DEPRECATED - now each service has its own technician
   technicianName?: string; // DEPRECATED - now each service has its own technician
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
@@ -465,7 +485,7 @@ interface Store {
   clearCart: () => void;
   
   // Order actions
-  createOrder: (orderData: Omit<Order, 'id' | 'items' | 'subtotal' | 'total' | 'date'>) => Order;
+  createOrder: (orderData: CreateOrderInput) => Order;
   updateOrder: (orderId: string, updates: Partial<Order>) => void;
   deleteOrder: (orderId: string) => void;
   clearAllOrders: () => void; // 🔥 Clear all orders
@@ -512,7 +532,7 @@ interface Store {
   
   // Self-service actions
   setCurrentTable: (table: Table | null) => void;
-  createSelfServiceOrder: (orderData: Omit<SelfServiceOrder, 'id' | 'date' | 'items' | 'subtotal' | 'total'>) => void;
+  createSelfServiceOrder: (orderData: CreateSelfServiceOrderInput) => void;
   updateOrderStatus: (orderId: string, status: SelfServiceOrder['status']) => void;
   addMessageToOrder: (orderId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   
@@ -1329,6 +1349,8 @@ export const useStore = create<Store>()(
           createdBy: 'system',
         },
       ],
+      stockInReceipts: [],
+      stockOutReceipts: [],
       language: 'vi',
       shifts: [],
       currentShift: null,
@@ -2628,7 +2650,9 @@ export const useStore = create<Store>()(
             const errorMessage =
               'error' in productsResponse
                 ? productsResponse.error
-                : productsResponse.message;
+                : 'message' in productsResponse
+                ? productsResponse.message
+                : undefined;
             console.error(
               '❌ Failed to load products:',
               errorMessage || 'Unknown error',
