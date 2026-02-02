@@ -4,13 +4,13 @@ import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { useCrossTabSync } from '../../../../lib/restaurant-lib/useCrossTabSync';
 import { toast } from 'sonner';
 import { 
-  Search, Plus, Minus, Trash2, X, DollarSign, Printer, User, 
+  Search, Plus, Minus, Trash2, X, DollarSign, User, 
   Clock, CreditCard, Smartphone, QrCode, Zap, Grid3x3, List,
-  Tag, Star, TrendingUp, ShoppingBag, Calculator, Percent,
-  Menu, ChevronRight, Check, AlertCircle, Barcode, Save,
-  RotateCcw, FileText, Users, PauseCircle, PlayCircle,
-  Settings, History, Grid, Monitor, Keyboard, Edit3, Edit2,
-  MessageSquare, Receipt, Eye, Volume2, Bell, Gift,
+  Tag, Star, ShoppingBag, Percent,
+  Check, AlertCircle, Barcode,
+  RotateCcw, FileText, PauseCircle,
+  History, Grid, Monitor, Edit3, Edit2,
+  Receipt, Volume2, Bell, Gift,
   Package, Scissors, Sparkles, UtensilsCrossed
 } from 'lucide-react';
 import { CardPaymentForm } from '../../components/forms/CardPaymentForm';
@@ -52,7 +52,7 @@ export function ModernSalesScreen() {
     heldBills,
     holdBill,
     recallBill,
-    // deleteHeldBills,
+    deleteHeldBill,
     orders,
     settings,
     addToRecent,
@@ -64,7 +64,6 @@ export function ModernSalesScreen() {
     setCart,
     tableAreas, // Lấy từ quản lý phòng/bàn
     assignOrderToTable,
-    clearTable,
     createKitchenOrder,
     kitchenOrders,
     updateKitchenOrderItems,
@@ -505,7 +504,9 @@ export function ModernSalesScreen() {
       customerPhone,
       discount,
       note: orderNote,
-      status: receivedAmt >= total ? 'completed' : 'pending',
+      status: (receivedAmt >= total ? 'completed' : 'pending') as
+        | 'completed'
+        | 'pending',
       timestamp: new Date().toISOString(),
       paidAt: new Date().toISOString(),
       receivedAmount: receivedAmt,
@@ -539,7 +540,7 @@ export function ModernSalesScreen() {
           const sessions = treatmentProduct?.sessionDetails
             ? treatmentProduct.sessionDetails.map((session) => ({
                 sessionNumber: session.sessionNumber,
-                sessionName: session.sessionName || `Buổi ${session.sessionNumber}`,
+                sessionName: `Buổi ${session.sessionNumber}`,
                 items: [
                   ...session.products.map((prod) => {
                     const product = products.find(p => p.id === prod.id);
@@ -2148,7 +2149,6 @@ export function ModernSalesScreen() {
               {filteredTables?.map((table) => {
                 const isSelected = selectedTableId === table.id;
                 const isAvailable = table.status === 'available';
-                const isOccupied = table.status === 'occupied';
                 
                 return (
                   <button
@@ -2477,15 +2477,17 @@ export function ModernSalesScreen() {
                 <p className="text-sm mt-2 text-center">{t.addProductsToStart}</p>
               </div>
             ) : (
-              cart.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedCartItem(item.id)}
-                  className={`bg-gray-50 rounded-xl p-3 border-2 transition-all cursor-pointer ${
-                    selectedCartItem === item.id ? 'bg-orange-50' : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  style={selectedCartItem === item.id ? { borderColor: '#FE7410', backgroundColor: '#FFF7ED' } : {}}
-                >
+              cart.map((item) => {
+                const comboItems = item.comboItems ?? [];
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedCartItem(item.id)}
+                    className={`bg-gray-50 rounded-xl p-3 border-2 transition-all cursor-pointer ${
+                      selectedCartItem === item.id ? 'bg-orange-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    style={selectedCartItem === item.id ? { borderColor: '#FE7410', backgroundColor: '#FFF7ED' } : {}}
+                  >
                   <div className="flex items-start gap-2 mb-2">
                     <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#FFEDD5' }}>
                       {item.productType === 'combo' ? (
@@ -2497,12 +2499,12 @@ export function ModernSalesScreen() {
                     
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 text-base line-clamp-1">{item.name}</h3>
-                      {item.productType === 'combo' && item.comboItems && (
+                      {item.productType === 'combo' && comboItems.length > 0 && (
                         <div className="text-xs text-gray-500 mt-0.5">
-                          {item.comboItems.map((comboItem, idx) => (
+                          {comboItems.map((comboItem, idx) => (
                             <span key={idx}>
                               {comboItem.productName} x{comboItem.quantity}
-                              {idx < item.comboItems.length - 1 ? ', ' : ''}
+                              {idx < comboItems.length - 1 ? ', ' : ''}
                             </span>
                           ))}
                         </div>
@@ -2628,8 +2630,9 @@ export function ModernSalesScreen() {
                       <span className="text-xs">{item.note ? 'Có ghi chú' : 'Ghi chú'}</span>
                     </button>
                   </div>
-                </div>
-              ))
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -3074,7 +3077,7 @@ export function ModernSalesScreen() {
                   <div>
                     <CardPaymentForm
                       amount={total}
-                      onSuccess={(data) => {
+                      onSuccess={() => {
                         handleCompletePayment();
                       }}
                       onCancel={() => setPaymentMethod('cash')}
@@ -3088,7 +3091,7 @@ export function ModernSalesScreen() {
                       amount={total}
                       orderCode={`POS-${Date.now()}`}
                       paymentType={paymentMethod}
-                      onSuccess={(data) => {
+                      onSuccess={() => {
                         handleCompletePayment();
                       }}
                       onCancel={() => setPaymentMethod('cash')}

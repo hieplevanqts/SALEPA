@@ -143,6 +143,15 @@ export interface Order {
   createdBy?: string; // Người tạo hóa đơn
 }
 
+export type CreateOrderInput = Omit<
+  Order,
+  "id" | "items" | "subtotal" | "total" | "date" | "timestamp" | "discount"
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
+
 export interface Shift {
   id: string;
   openedBy: string;
@@ -319,6 +328,15 @@ export interface SelfServiceOrder extends Order {
     | "cancelled";
   orderType: "dine-in" | "takeaway";
 }
+
+export type CreateSelfServiceOrderInput = Omit<
+  SelfServiceOrder,
+  "id" | "items" | "subtotal" | "total" | "date" | "timestamp" | "discount"
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
 
 export interface AppointmentService {
   instanceId?: string;
@@ -561,12 +579,7 @@ interface Store {
   clearCart: () => void;
 
   // Order actions
-  createOrder: (
-    orderData: Omit<
-      Order,
-      "id" | "items" | "subtotal" | "total" | "date"
-    >,
-  ) => Order;
+  createOrder: (orderData: CreateOrderInput) => Order;
   updateOrder: (
     orderId: string,
     updates: Partial<Order>,
@@ -652,10 +665,7 @@ interface Store {
   // Self-service actions
   setCurrentTable: (table: Table | null) => void;
   createSelfServiceOrder: (
-    orderData: Omit<
-      SelfServiceOrder,
-      "id" | "date" | "items" | "subtotal" | "total"
-    >,
+    orderData: CreateSelfServiceOrderInput,
   ) => void;
   updateOrderStatus: (
     orderId: string,
@@ -1179,6 +1189,8 @@ export const useStore = create<Store>()(
           createdBy: "system",
         },
       ],
+      stockInReceipts: [],
+      stockOutReceipts: [],
 
       customerTypes: [
         {
@@ -2164,8 +2176,11 @@ export const useStore = create<Store>()(
                         sessionName: `Buổi ${i + 1}`,
                         items: [
                           {
-                            productId: fullProduct.id,
-                            productName: fullProduct.name,
+                            productId:
+                              fullProduct.id || fullProduct._id,
+                            productName:
+                              fullProduct.name ||
+                              fullProduct.title,
                             productType: "service",
                             quantity: 1,
                             duration: fullProduct.duration,
@@ -2182,9 +2197,15 @@ export const useStore = create<Store>()(
                       {
                         id: packageId,
                         customerId: customerId,
-                        customerName: orderData.customerName,
-                        treatmentProductId: item.id,
-                        treatmentName: item.name,
+                        customerName:
+                          orderData.customerName || "",
+                        treatmentProductId:
+                          item.id || fullProduct._id,
+                        treatmentName:
+                          item.name ||
+                          fullProduct.name ||
+                          fullProduct.title ||
+                          "",
                         totalSessions: fullProduct.sessions,
                         usedSessionNumbers: [],
                         remainingSessions: fullProduct.sessions,
@@ -2630,6 +2651,12 @@ export const useStore = create<Store>()(
       },
 
       createSelfServiceOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          timestamp: orderTimestamp,
+          date: orderDate,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -2639,7 +2666,7 @@ export const useStore = create<Store>()(
           cart.reduce(
             (sum, item) => sum + item.discount * item.quantity,
             0,
-          ) + (orderData.discount || 0);
+          ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
 
         const order: SelfServiceOrder = {
@@ -2648,10 +2675,10 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
-          ...orderData,
+          ...restOrderData,
         };
 
         set((state) => ({
@@ -2667,7 +2694,8 @@ export const useStore = create<Store>()(
             if (cartItem) {
               return {
                 ...p,
-                stock: p.stock - cartItem.quantity,
+                stock:
+                  (p.stock ?? p.quantity ?? 0) - cartItem.quantity,
               };
             }
             return p;
@@ -3022,7 +3050,9 @@ export const useStore = create<Store>()(
         const { appointments } = get();
         // Generate appointment code (LH000001, LH000002, etc.)
         const maxCode = appointments.reduce((max, apt) => {
-          const codeNum = parseInt(apt.code.replace("LH", ""));
+          const codeNum = apt.code
+            ? parseInt(apt.code.replace("LH", ""))
+            : 0;
           return codeNum > max ? codeNum : max;
         }, 0);
         const code = `LH${String(maxCode + 1).padStart(6, "0")}`;
@@ -3082,11 +3112,6 @@ export const useStore = create<Store>()(
 
         // Create notifications for updated technicians
         if (updates.services && oldAppointment) {
-          const oldTechIds = new Set(
-            oldAppointment.services
-              .map((s) => s.technicianId)
-              .filter(Boolean) as string[],
-          );
           const newTechIds = new Set(
             updates.services
               .map((s) => s.technicianId)
@@ -3098,9 +3123,10 @@ export const useStore = create<Store>()(
             get().createNotification({
               userId: techId,
               appointmentId,
-              appointmentCode: oldAppointment.code,
+              appointmentCode:
+                oldAppointment.code || oldAppointment.id,
               title: "Lịch hẹn cập nhật",
-              message: `Lịch hẹn ${oldAppointment.code} - ${oldAppointment.customerName} đã được cập nhật`,
+              message: `Lịch hẹn ${oldAppointment.code || oldAppointment.id} - ${oldAppointment.customerName} đã được cập nhật`,
               type: "updated_appointment",
               isRead: false,
             });
@@ -3130,9 +3156,10 @@ export const useStore = create<Store>()(
             get().createNotification({
               userId: techId,
               appointmentId,
-              appointmentCode: appointment.code,
+              appointmentCode:
+                appointment.code || appointment.id,
               title: "Lịch hẹn đã hủy",
-              message: `Lịch hẹn ${appointment.code} - ${appointment.customerName} đã bị hủy`,
+              message: `Lịch hẹn ${appointment.code || appointment.id} - ${appointment.customerName} đã bị hủy`,
               type: "cancelled_appointment",
               isRead: false,
             });
@@ -3174,6 +3201,7 @@ export const useStore = create<Store>()(
           if (apt.id === excludeAppointmentId) return false;
           if (apt.appointmentDate !== date) return false;
           if (apt.status === "cancelled") return false;
+          if (!apt.startTime || !apt.endTime) return false;
 
           // Check if any service in this appointment is assigned to this technician
           const hasTechnicianAssigned = apt.services.some(
@@ -3296,7 +3324,8 @@ export const useStore = create<Store>()(
           if (item) {
             return {
               ...p,
-              stock: p.stock + item.quantity,
+              stock:
+                (p.stock ?? p.quantity ?? 0) + item.quantity,
             };
           }
           return p;
@@ -3327,7 +3356,10 @@ export const useStore = create<Store>()(
           if (oldItem) {
             return {
               ...p,
-              stock: Math.max(0, p.stock - oldItem.quantity),
+              stock: Math.max(
+                0,
+                (p.stock ?? p.quantity ?? 0) - oldItem.quantity,
+              ),
             };
           }
           return p;
@@ -3341,7 +3373,8 @@ export const useStore = create<Store>()(
           if (newItem) {
             return {
               ...p,
-              stock: p.stock + newItem.quantity,
+              stock:
+                (p.stock ?? p.quantity ?? 0) + newItem.quantity,
             };
           }
           return p;
@@ -3397,7 +3430,10 @@ export const useStore = create<Store>()(
           if (item) {
             return {
               ...p,
-              stock: Math.max(0, p.stock - item.quantity),
+              stock: Math.max(
+                0,
+                (p.stock ?? p.quantity ?? 0) - item.quantity,
+              ),
             };
           }
           return p;
@@ -3427,7 +3463,10 @@ export const useStore = create<Store>()(
             if (item) {
               return {
                 ...p,
-                stock: Math.max(0, p.stock - item.quantity),
+                stock: Math.max(
+                  0,
+                  (p.stock ?? p.quantity ?? 0) - item.quantity,
+                ),
               };
             }
             return p;
@@ -3443,8 +3482,7 @@ export const useStore = create<Store>()(
       },
 
       updateStockOutReceipt: (receiptId, receiptData) => {
-        const { stockOutReceipts, products, currentUser } =
-          get();
+        const { stockOutReceipts, products } = get();
         const oldReceipt = (stockOutReceipts || []).find(
           (r) => r.id === receiptId,
         );
@@ -3458,7 +3496,9 @@ export const useStore = create<Store>()(
             if (oldItem) {
               return {
                 ...p,
-                stock: p.stock + oldItem.quantity,
+                stock:
+                  (p.stock ?? p.quantity ?? 0) +
+                  oldItem.quantity,
               };
             }
             return p;
@@ -3472,7 +3512,11 @@ export const useStore = create<Store>()(
             if (newItem) {
               return {
                 ...p,
-                stock: Math.max(0, p.stock - newItem.quantity),
+                stock: Math.max(
+                  0,
+                  (p.stock ?? p.quantity ?? 0) -
+                    newItem.quantity,
+                ),
               };
             }
             return p;
@@ -3510,7 +3554,8 @@ export const useStore = create<Store>()(
             if (item) {
               return {
                 ...p,
-                stock: p.stock + item.quantity,
+                stock:
+                  (p.stock ?? p.quantity ?? 0) + item.quantity,
               };
             }
             return p;
@@ -3641,7 +3686,14 @@ export const useStore = create<Store>()(
 
         // Find package that includes this service
         for (const pkg of activePackages) {
-          if (pkg.serviceIds.includes(serviceId)) {
+        const hasService = pkg.sessions.some((session) =>
+          session.items.some(
+            (item) =>
+              item.productType === "service" &&
+              item.productId === serviceId,
+          ),
+        );
+        if (hasService) {
             return pkg;
           }
         }
@@ -3699,8 +3751,7 @@ export const useStore = create<Store>()(
 
           // Second pass: Add missing codes
           let codeCounter = 1;
-          state.appointments = state.appointments.map(
-            (apt, index) => {
+          state.appointments = state.appointments.map((apt) => {
               if (!apt.code) {
                 // Generate code for old appointments
                 const code = `LH${String(codeCounter).padStart(6, "0")}`;
@@ -3716,8 +3767,8 @@ export const useStore = create<Store>()(
                 }
               }
               return apt;
-            },
-          );
+            }
+          });
         }
 
         // Migration: Migrate products from old schema to new schema

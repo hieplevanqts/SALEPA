@@ -7,6 +7,11 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: await mockDataService.getProductTypes() };
   },
+  getProductType: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.getProductTypeById(id);
+    return { success: !!result, data: result };
+  },
   createProductType: async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 100));
     const result = await mockDataService.createProductType(data);
@@ -17,11 +22,21 @@ export const mockApi = {
     const result = await mockDataService.updateProductType(id, data);
     return { success: !!result, data: result };
   },
+  deleteProductType: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.deleteProductType(id);
+    return { success: result };
+  },
 
   // Product Categories
   getProductCategories: async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: await mockDataService.getProductCategories() };
+  },
+  getProductCategory: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.getProductCategoryById(id);
+    return { success: !!result, data: result };
   },
   createProductCategory: async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -32,6 +47,11 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     const result = await mockDataService.updateProductCategory(id, data);
     return { success: !!result, data: result };
+  },
+  deleteProductCategory: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await mockDataService.deleteProductCategory(id);
+    return { success: result };
   },
 
   // Products

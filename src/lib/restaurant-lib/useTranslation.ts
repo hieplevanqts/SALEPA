@@ -9,6 +9,7 @@ type TranslationFunction = ((
 
 export function useTranslation() {
   const language = useStore((state) => state.language);
+  const setLanguage = useStore((state) => state.setLanguage);
   
   const dictionary = translations[language];
   const t = Object.assign(
@@ -16,5 +17,5 @@ export function useTranslation() {
     dictionary,
   ) as TranslationFunction;
   
-  return { t, language };
+  return { t, language, setLanguage };
 }

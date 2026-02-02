@@ -120,6 +120,7 @@ export interface Order {
   timestamp: string; // Add this for better time tracking
   paymentMethod: 'cash' | 'card' | 'transfer' | 'momo' | 'zalopay' | 'vnpay';
   paymentMethods?: { method: string; amount: number }[]; // For split payment
+  customerId?: string;
   customerName?: string;
   customerPhone?: string;
   note?: string;

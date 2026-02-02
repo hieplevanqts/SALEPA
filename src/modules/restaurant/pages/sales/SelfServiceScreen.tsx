@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
-  QrCode, ShoppingBag, Plus, Minus, Trash2, Check, X, 
+  QrCode, ShoppingBag, Minus, Trash2, Check, X, 
   ChevronRight, MapPin, User, Phone, MessageSquare, Coffee,
   Utensils, PackageOpen, Sparkles, Clock, Star, Languages, ClipboardList
 } from 'lucide-react';

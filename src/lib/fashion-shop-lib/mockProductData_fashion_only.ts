@@ -766,6 +766,14 @@ export const mockDataService = {
     }
     return null;
   },
+  deleteProductType: async (id: string) => {
+    const index = mockProductTypes.findIndex(pt => pt._id === id);
+    if (index !== -1) {
+      mockProductTypes.splice(index, 1);
+      return true;
+    }
+    return false;
+  },
 
   // Product Categories
   getProductCategories: async () => mockProductCategories,
@@ -782,6 +790,14 @@ export const mockDataService = {
       return mockProductCategories[index];
     }
     return null;
+  },
+  deleteProductCategory: async (id: string) => {
+    const index = mockProductCategories.findIndex(pc => pc._id === id);
+    if (index !== -1) {
+      mockProductCategories.splice(index, 1);
+      return true;
+    }
+    return false;
   },
 
   // Products
