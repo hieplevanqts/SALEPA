@@ -3752,22 +3752,21 @@ export const useStore = create<Store>()(
           // Second pass: Add missing codes
           let codeCounter = 1;
           state.appointments = state.appointments.map((apt) => {
-              if (!apt.code) {
-                // Generate code for old appointments
-                const code = `LH${String(codeCounter).padStart(6, "0")}`;
-                codeCounter++;
-                return { ...apt, code };
-              } else {
-                // Track existing codes to avoid duplicates
-                const codeNum = parseInt(
-                  apt.code.replace("LH", ""),
-                );
-                if (codeNum >= codeCounter) {
-                  codeCounter = codeNum + 1;
-                }
+            if (!apt.code) {
+              // Generate code for old appointments
+              const code = `LH${String(codeCounter).padStart(6, "0")}`;
+              codeCounter++;
+              return { ...apt, code };
+            } else {
+              // Track existing codes to avoid duplicates
+              const codeNum = parseInt(
+                apt.code.replace("LH", ""),
+              );
+              if (codeNum >= codeCounter) {
+                codeCounter = codeNum + 1;
               }
-              return apt;
             }
+            return apt;
           });
         }
 
