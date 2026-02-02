@@ -1,14 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import type { Customer } from '../../../../lib/spa-lib/store';
-import { Plus, Search, Eye, Edit, Trash2, Users, TestTube, FileSpreadsheet, Download, Upload } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Users, Download, Upload } from 'lucide-react';
 import { CustomerForm } from '../../components/forms/CustomerForm';
 import { CustomerDetailView } from './CustomerDetailView';
 import { ImportCustomers } from './ImportCustomers';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
-import { forceLoadDemoSpaOrders } from '../../../../lib/spa-lib/demoData';
-import { demoCustomer, demoTreatmentPackage, demoAppointments } from '../../../../lib/spa-lib/demoCustomerWithPackage';
 
 interface CustomerManagementProps {
   onViewOrder?: (orderId: string) => void;
@@ -16,7 +14,7 @@ interface CustomerManagementProps {
 
 export function CustomerManagement({ onViewOrder }: CustomerManagementProps = {}) {
   const { t } = useTranslation();
-  const { customers, deleteCustomer, orders, addCustomer, createCustomerTreatmentPackage, createAppointment, customerGroups } = useStore();
+  const { customers, deleteCustomer, orders, customerGroups } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'recent' | 'totalSpent' | 'debt'>('name');
   const [filterGroupId, setFilterGroupId] = useState<string>('all');
@@ -31,6 +29,11 @@ export function CustomerManagement({ onViewOrder }: CustomerManagementProps = {}
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
+  const getPaidAmount = (order: Order) =>
+    order.receivedAmount ??
+    (order as { paidAmount?: number }).paidAmount ??
+    0;
+
   // Calculate customer stats from orders
   const customersWithStats = useMemo(() => {
     return customers.map(customer => {
@@ -39,8 +42,7 @@ export function CustomerManagement({ onViewOrder }: CustomerManagementProps = {}
       );
       const totalSpent = customerOrders.reduce((sum, order) => sum + (order.total || 0), 0);
       const totalPaid = customerOrders.reduce((sum, order) => {
-        const received = order.receivedAmount || order.paidAmount || 0;
-        // Cap received amount at order total for calculation
+        const received = getPaidAmount(order);
         const cappedReceived = received > order.total ? order.total : received;
         return sum + cappedReceived;
       }, 0);
@@ -137,15 +139,6 @@ export function CustomerManagement({ onViewOrder }: CustomerManagementProps = {}
   const handleAddNew = () => {
     setSelectedCustomer(null);
     setShowForm(true);
-  };
-
-  const getCustomerGroupLabel = (group?: string) => {
-    switch (group) {
-      case 'vip': return 'VIP';
-      case 'acquaintance': return t.customerData?.acquaintance || 'Quen';
-      case 'employee': return t.customerData?.employee || 'NV';
-      default: return t.customerData?.regular || 'Thường';
-    }
   };
 
   // Get customer group name from ID
@@ -533,7 +526,7 @@ export function CustomerManagement({ onViewOrder }: CustomerManagementProps = {}
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
             <div className="p-6">
               <h3 className="text-xl font-bold text-red-600 mb-4">
-                {t.customer?.deleteConfirm || 'Xác nhận xóa'}
+                {t.customerData?.deleteConfirmTitle || 'Xác nhận xóa'}
               </h3>
               <p className="text-gray-600 mb-6">
                 {t.language === 'vi' 

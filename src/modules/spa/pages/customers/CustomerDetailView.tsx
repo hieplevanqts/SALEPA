@@ -16,9 +16,9 @@ interface CustomerDetailViewProps {
 
 type TabType = 'overview' | 'purchases' | 'treatments' | 'services';
 
-export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onViewOrder }: CustomerDetailViewProps) {
+export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: CustomerDetailViewProps) {
   const { t } = useTranslation();
-  const { orders, products, deleteOrder, customerTreatmentPackages, getCustomerActivePackages, appointments, users, customerGroups } = useStore();
+  const { orders, deleteOrder, customerTreatmentPackages, appointments, customerGroups } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [currentServicesPage, setCurrentServicesPage] = useState(1);
   const servicesPerPage = 10;
@@ -27,6 +27,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
   const [expandedPackages, setExpandedPackages] = useState<string[]>([]);
+  const customerPhone = customer.phone ?? '';
 
   // Toggle package expansion
   const togglePackageExpansion = (packageId: string) => {
@@ -37,23 +38,31 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
     );
   };
 
+  const getPaidAmount = (order: Order) =>
+    order.receivedAmount ??
+    (order as { paidAmount?: number }).paidAmount ??
+    0;
+
   // Get customer orders
   const customerOrders = useMemo(() => {
-    const ordersArray = Array.isArray(orders) ? orders : Object.values(orders || {});
-    let result = ordersArray.filter((order) => 
-      order && order.customerPhone === customer.phone
-    );
-    
+    let result = orders.filter((order) => order.customerPhone === customerPhone);
+
     if (filterStatus !== 'all') {
       result = result.filter((order) => {
-        const received = order.receivedAmount || order.paidAmount || 0;
+        const received = getPaidAmount(order);
         const cappedReceived = received > order.total ? order.total : received;
-        return filterStatus === 'paid' ? cappedReceived >= order.total : cappedReceived < order.total;
+        return filterStatus === 'paid'
+          ? cappedReceived >= order.total
+          : cappedReceived < order.total;
       });
     }
-    
-    return result.sort((a, b) => new Date(b.timestamp || b.date || '').getTime() - new Date(a.timestamp || a.date || '').getTime());
-  }, [orders, customer.phone, filterStatus]);
+
+    return result.sort(
+      (a, b) =>
+        new Date(b.timestamp || b.date || '').getTime() -
+        new Date(a.timestamp || a.date || '').getTime(),
+    );
+  }, [orders, customerPhone, filterStatus]);
 
   // Get customer treatment packages from store
   const customerTreatmentPackagesData = useMemo(() => {
@@ -67,8 +76,8 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
     const services: any[] = [];
     
     // Get all appointments for this customer
-    const customerAppointments = appointments.filter(apt => 
-      apt.customerPhone === customer.phone && apt.status === 'completed'
+    const customerAppointments = appointments.filter(
+      (apt) => apt.customerPhone === customerPhone && apt.status === 'completed',
     );
     
     // Create a map for quick lookup: serviceName + date -> appointment
@@ -85,13 +94,12 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
     });
     
     customerOrders.forEach((order) => {
-      const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
-      items.forEach((item: any) => {
+      order.items.forEach((item) => {
         if (item && (item.type === 'service' || item.productType === 'service')) {
           const orderDate = (order.timestamp || order.date).split('T')[0]; // Get YYYY-MM-DD
           const lookupKey = `${item.name}-${orderDate}`;
           const appointmentData = appointmentMap.get(lookupKey);
-          
+
           services.push({
             id: `${order.id}-${item.name}`,
             name: item.name,
@@ -107,15 +115,14 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
       });
     });
     return services;
-  }, [customerOrders, appointments, customer.phone]);
+  }, [customerOrders, appointments, customerPhone]);
 
   // Calculate statistics
   const stats = useMemo(() => {
     const totalOrders = customerOrders.length;
     const totalSpent = customerOrders.reduce((sum, order) => sum + (order.total || 0), 0);
     const totalPaid = customerOrders.reduce((sum, order) => {
-      const received = order.receivedAmount || order.paidAmount || 0;
-      // Cap received amount at order total for calculation
+      const received = getPaidAmount(order);
       const cappedReceived = received > order.total ? order.total : received;
       return sum + cappedReceived;
     }, 0);
@@ -124,8 +131,8 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
     const lastVisit = customerOrders.length > 0 ? (customerOrders[0].timestamp || customerOrders[0].date) : customer.createdAt;
     
     // Get unpaid orders
-    const unpaidOrders = customerOrders.filter(order => {
-      const received = order.receivedAmount || order.paidAmount || 0;
+    const unpaidOrders = customerOrders.filter((order) => {
+      const received = getPaidAmount(order);
       const cappedReceived = received > order.total ? order.total : received;
       return cappedReceived < order.total;
     });
@@ -214,7 +221,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
   };
 
   const getPaymentStatusBadge = (order: Order) => {
-    const received = order.receivedAmount || order.paidAmount || 0;
+    const received = getPaidAmount(order);
     const cappedReceived = received > order.total ? order.total : received;
     const isPaid = cappedReceived >= order.total;
     
@@ -319,7 +326,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {/* Personal Information */}
                 <div className="bg-white rounded-2xl border-2 border-gray-200 p-6">
                   <h3 className="text-base font-bold text-gray-900 mb-4">
-                    {t('customerData')?.personalInfo || 'Thông tin cá nhân'}
+                    {t.customerData?.personalInfo || 'Thông tin cá nhân'}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Name */}
@@ -383,7 +390,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {/* Invoice Information */}
                 <div className="bg-white rounded-2xl border-2 border-gray-200 p-6">
                   <h3 className="text-base font-bold text-gray-900 mb-4">
-                    {t('customerData')?.invoiceInfo || 'Thông tin xuất hóa đơn'}
+                    {t.customerData?.invoiceInfo || 'Thông tin xuất hóa đơn'}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Customer Type */}
@@ -509,7 +516,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
                     <ShoppingBag className="w-5 h-5 text-gray-700" />
-                    {t('customerData')?.purchaseHistory || 'Lịch sử mua hàng'} ({customerOrders.length})
+                    {t.customerData?.purchaseHistory || 'Lịch sử mua hàng'} ({customerOrders.length})
                   </h3>
                   {/* Filter */}
                   <div className="flex gap-2">
@@ -552,7 +559,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {customerOrders.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">{t('customerData')?.noOrders || 'Chưa có hóa đơn nào'}</p>
+                    <p className="text-sm text-gray-500">{t.customerData?.noOrders || 'Chưa có hóa đơn nào'}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -598,13 +605,13 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
               <div className="bg-white rounded-2xl border-2 border-gray-200 p-6">
                 <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Package className="w-5 h-5 text-gray-700" />
-                  {t('customerData')?.treatmentPackages || 'Gói liệu trình'} ({customerTreatmentPackagesData.length})
+                  {t.customerData?.treatmentPackages || 'Gói liệu trình'} ({customerTreatmentPackagesData.length})
                 </h3>
 
                 {customerTreatmentPackagesData.length === 0 ? (
                   <div className="text-center py-12">
                     <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">{t('customerData')?.noTreatments || 'Chưa mua liệu trình nào'}</p>
+                    <p className="text-sm text-gray-500">{t.customerData?.noTreatments || 'Chưa mua liệu trình nào'}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -633,7 +640,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                             <div className="flex-1">
                               <h4 className="font-bold text-gray-900 text-base mb-1">{pkg.treatmentName}</h4>
                               <p className="text-sm text-gray-600">
-                                {t('customerData')?.purchaseDate || 'Ngày mua'}: {formatDate(pkg.purchaseDate)}
+                                {t.customerData?.purchaseDate || 'Ngày mua'}: {formatDate(pkg.purchaseDate)}
                               </p>
                               {pkg.expiryDate && (
                                 <p className="text-xs text-gray-500 mt-1">
@@ -656,7 +663,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
 
                           <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-600">{t('customerData')?.sessionsCompleted || 'Buổi đã sử dụng'}</span>
+                              <span className="text-sm text-gray-600">{t.customerData?.sessionsCompleted || 'Buổi đã sử dụng'}</span>
                               <span className="font-bold text-gray-900 text-base">{pkg.usedSessionNumbers?.length || 0}/{pkg.totalSessions}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -772,13 +779,13 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
               <div className="bg-white rounded-2xl border-2 border-gray-200 p-6">
                 <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Scissors className="w-5 h-5 text-gray-700" />
-                  {t('customerData')?.servicesUsed || 'Dịch vụ đã dùng'} ({customerServices.length})
+                  {t.customerData?.servicesUsed || 'Dịch vụ đã dùng'} ({customerServices.length})
                 </h3>
 
                 {customerServices.length === 0 ? (
                   <div className="text-center py-12">
                     <Scissors className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">{t('customerData')?.noServices || 'Chưa sử dụng dịch vụ nào'}</p>
+                    <p className="text-sm text-gray-500">{t.customerData?.noServices || 'Chưa sử dụng dịch vụ nào'}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -788,7 +795,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                           <div className="flex-1">
                             <h4 className="font-bold text-gray-900 text-base mb-1">{service.name}</h4>
                             <p className="text-sm text-gray-600">
-                              {t('customerData')?.serviceDate || 'Ngày dịch vụ'}: {formatDate(service.serviceDate)}
+                              {t.customerData?.serviceDate || 'Ngày dịch vụ'}: {formatDate(service.serviceDate)}
                             </p>
                           </div>
                           <div className="text-right">
@@ -856,7 +863,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 lg:sticky lg:top-6">
               <h3 className="text-base font-bold text-gray-900 mb-4">
-                {t('customerData')?.summary || 'Tổng quan'}
+                {t.customerData?.summary || 'Tổng quan'}
               </h3>
 
               {/* Customer Avatar & Name */}
@@ -904,7 +911,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {/* Total Spent */}
                 <div className="rounded-xl p-4" style={{ backgroundColor: '#FFF5EE', border: '2px solid #FE7410' }}>
                   <div className="text-sm mb-1" style={{ color: '#FE7410' }}>
-                    {t('customerData')?.totalSpent || 'Tổng chi tiêu'}
+                    {t.customerData?.totalSpent || 'Tổng chi tiêu'}
                   </div>
                   <div className="font-bold text-3xl" style={{ color: '#FE7410' }}>
                     {stats.totalSpent.toLocaleString('vi-VN')}đ
@@ -914,7 +921,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {/* Total Orders */}
                 <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
                   <div className="text-sm text-blue-600 mb-1 flex items-center gap-1">
-                    {t('customerData')?.orderCount || 'Số hóa đơn'}
+                    {t.customerData?.orderCount || 'Số hóa đơn'}
                   </div>
                   <div className="font-bold text-2xl text-blue-900">{stats.totalOrders}</div>
                 </div>
@@ -925,7 +932,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                     <div className="flex items-center gap-2">
                       <Cake className="w-5 h-5 text-pink-600" />
                       <span className="text-sm font-semibold text-pink-800">
-                        🎉 {t('customerData')?.birthday || 'Sinh nhật hôm nay'}
+                        🎉 {t.customerData?.birthday || 'Sinh nhật hôm nay'}
                       </span>
                     </div>
                   </div>
