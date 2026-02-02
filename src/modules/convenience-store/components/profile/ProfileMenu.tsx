@@ -1,4 +1,4 @@
-import { User, Settings, Lock, LogOut, X } from 'lucide-react';
+import { User, Lock, LogOut, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 
@@ -8,7 +8,7 @@ interface ProfileMenuProps {
 }
 
 export function ProfileMenu({ onClose, onLogout }: ProfileMenuProps) {
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showProfileDetails, setShowProfileDetails] = useState(false);
 

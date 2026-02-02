@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Edit, Trash2, AlertCircle, ShoppingBag, Clock, CreditCard, ArrowLeft } from 'lucide-react';
+import { User, Edit, Trash2, AlertCircle, ShoppingBag, Clock, CreditCard, ArrowLeft } from 'lucide-react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import type { Customer, Order } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
@@ -40,21 +40,6 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
         new Date(a.timestamp || a.date || '').getTime(),
     );
   }, [orders, customerPhone, filterStatus]);
-
-  const getCustomerGroupBadge = (group?: string) => {
-    const badges = {
-      vip: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'VIP' },
-      acquaintance: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Bạn bè' },
-      employee: { bg: 'bg-green-100', text: 'text-green-800', label: 'Nhân viên' },
-      regular: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Thường xuyên' },
-    };
-    const badge = badges[group as keyof typeof badges] || badges.regular;
-    return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badge.bg} ${badge.text}`}>
-        {badge.label}
-      </span>
-    );
-  };
 
   const getInitials = (name: string) => {
     if (!name) return '??';
@@ -107,20 +92,6 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
     return (
       today.getDate() === birthDate.getDate() &&
       today.getMonth() === birthDate.getMonth()
-    );
-  };
-
-  const getStatusBadge = (status?: string) => {
-    const badges = {
-      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ xử lý' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã hủy' },
-    };
-    const badge = badges[status as keyof typeof badges] || badges.completed;
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
-        {badge.label}
-      </span>
     );
   };
 
@@ -330,7 +301,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm font-semibold text-yellow-900 mb-1">{t('customerData')?.notes || 'Ghi chú'}</p>
+                          <p className="text-sm font-semibold text-yellow-900 mb-1">{t.customerData?.notes || 'Ghi chú'}</p>
                           <p className="text-sm text-yellow-800">{customer.metadata.notes}</p>
                         </div>
                       </div>
@@ -509,14 +480,14 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
                 <div className="mb-4">
                   <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
                     <ShoppingBag className="w-5 h-5 text-gray-700" />
-                    {t('customerData')?.purchaseHistory || 'Lịch sử mua hàng'} ({customerOrders.length})
+                    {t.customerData?.purchaseHistory || 'Lịch sử mua hàng'} ({customerOrders.length})
                   </h3>
                 </div>
 
                 {customerOrders.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">{t('customerData')?.noOrders || 'Chưa có đơn hàng nào'}</p>
+                    <p className="text-sm text-gray-500">{t.customerData?.noOrders || 'Chưa có đơn hàng nào'}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -562,7 +533,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 lg:sticky lg:top-6">
               <h3 className="text-base font-bold text-gray-900 mb-6">
-                {t('customerData')?.summary || 'Tổng quan'}
+                {t.customerData?.summary || 'Tổng quan'}
               </h3>
 
               {/* Stats */}
@@ -570,7 +541,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
                 {/* Member Since */}
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-600 mb-1">
-                    {t('customerData')?.memberSince || 'Thành viên từ'}
+                    {t.customerData?.memberSince || 'Thành viên từ'}
                   </div>
                   <div className="font-semibold text-gray-900 text-base">{formatDate(customer.created_at)}</div>
                 </div>
@@ -587,7 +558,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
                 {customer.last_purchase_at && (
                   <div className="bg-gray-50 rounded-xl p-4">
                     <div className="text-sm text-gray-600 mb-1">
-                      {t('customerData')?.lastVisit || 'Lần mua cuối'}
+                      {t.customerData?.lastVisit || 'Lần mua cuối'}
                     </div>
                     <div className="font-semibold text-gray-900 text-base">{formatDateTime(customer.last_purchase_at)}</div>
                   </div>
@@ -596,7 +567,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
                 {/* Total Spent */}
                 <div className="rounded-xl p-4" style={{ backgroundColor: '#FFF5EE', border: '2px solid #FE7410' }}>
                   <div className="text-sm mb-1" style={{ color: '#FE7410' }}>
-                    {t('customerData')?.totalSpent || 'Tổng chi tiêu'}
+                    {t.customerData?.totalSpent || 'Tổng chi tiêu'}
                   </div>
                   <div className="font-bold text-3xl" style={{ color: '#FE7410' }}>
                     {customer.total_spent.toLocaleString('vi-VN')}đ
@@ -606,7 +577,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
                 {/* Total Orders */}
                 <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
                   <div className="text-sm text-green-700 mb-1">
-                    {t('customerData')?.orderCount || 'Số đơn hàng'}
+                    {t.customerData?.orderCount || 'Số đơn hàng'}
                   </div>
                   <div className="font-bold text-3xl text-green-600">{customer.total_orders}</div>
                 </div>
@@ -616,7 +587,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: Cust
                   <div className="bg-pink-50 border-2 border-pink-200 rounded-xl p-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-pink-800">
-                        🎉 {t('customerData')?.birthday || 'Sinh nhật hôm nay'}
+                        🎉 {t.customerData?.birthday || 'Sinh nhật hôm nay'}
                       </span>
                     </div>
                   </div>

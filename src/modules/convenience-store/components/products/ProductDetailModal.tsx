@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, MessageSquare, Clock } from 'lucide-react';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
-import type { Product, SelectedOption } from '../../../../lib/convenience-store-lib/store';
+import type { Product } from '../../../../lib/convenience-store-lib/store';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -33,6 +33,7 @@ export function ProductDetailModal({ product, onClose, onAdd }: ProductDetailMod
   }, [product]);
 
   if (!product) return null;
+  const stock = product.stock ?? product.quantity ?? 0;
 
   const handleOptionChange = (optionId: string, choiceId: string, isMultiple: boolean) => {
     setSelectedOptions((prev) => {
@@ -112,10 +113,10 @@ export function ProductDetailModal({ product, onClose, onAdd }: ProductDetailMod
           <div>
             <div className="flex items-start justify-between mb-2">
               <h2 className="text-2xl font-bold text-gray-900 flex-1">{product.name}</h2>
-              {product.stock < 10 && (
+              {stock < 10 && (
                 <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {t('only') || 'Only'} {product.stock} {t('left') || 'left'}
+                  {t('only') || 'Only'} {stock} {t('left') || 'left'}
                 </span>
               )}
             </div>
@@ -202,8 +203,8 @@ export function ProductDetailModal({ product, onClose, onAdd }: ProductDetailMod
                   <span className="text-2xl font-bold text-blue-600">{quantity}</span>
                 </div>
                 <button
-                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  disabled={quantity >= product.stock}
+                  onClick={() => setQuantity(Math.min(stock, quantity + 1))}
+                  disabled={quantity >= stock}
                   className="w-12 h-12 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-all"
                 >
                   <Plus className="w-5 h-5 text-white" />

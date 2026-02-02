@@ -67,7 +67,7 @@ export function Calculator({ onConfirm, onClose, title, initialValue = 0 }: Calc
 
           {/* Numpad */}
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {buttons.map((row, i) => (
+            {buttons.map((row) => (
               row.map((btn) => (
                 <button
                   key={btn}

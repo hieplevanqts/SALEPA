@@ -3,7 +3,9 @@ import { useStore } from '../../../../lib/convenience-store-lib/store';
 export default function TreatmentPackageDebug() {
   const { customerTreatmentPackages, customers, orders } = useStore();
   
-  const tranhMinhAnhCustomer = customers.find(c => c.name.includes('Trần Minh Anh'));
+  const tranhMinhAnhCustomer = customers.find(c =>
+    (c.name ?? c.full_name ?? '').includes('Trần Minh Anh'),
+  );
   const tranhMinhAnhPackages = customerTreatmentPackages.filter(
     pkg => pkg.customerId === tranhMinhAnhCustomer?.id
   );
@@ -21,7 +23,7 @@ export default function TreatmentPackageDebug() {
           {tranhMinhAnhCustomer ? (
             <div className="ml-2 text-xs">
               <div>ID: {tranhMinhAnhCustomer.id}</div>
-              <div>Tên: {tranhMinhAnhCustomer.name}</div>
+              <div>Tên: {tranhMinhAnhCustomer.name ?? tranhMinhAnhCustomer.full_name}</div>
               <div>SĐT: {tranhMinhAnhCustomer.phone}</div>
             </div>
           ) : (

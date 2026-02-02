@@ -1,6 +1,5 @@
 import { X, Printer } from 'lucide-react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
-import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import type { Order } from '../../../../lib/convenience-store-lib/store';
 
 interface PrintReceiptProps {
@@ -10,7 +9,6 @@ interface PrintReceiptProps {
 
 export function PrintReceipt({ order, onClose }: PrintReceiptProps) {
   const { settings } = useStore();
-  const { t } = useTranslation();
 
   const handlePrint = () => {
     window.print();
