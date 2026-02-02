@@ -1,3 +1,5 @@
+import { createElement } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { useStore } from './store';
 import { userHasPermission } from './permissionData';
 
@@ -62,18 +64,18 @@ export function useModulePermissions(module: string) {
  * export default withPermission(ProductForm, 'products_create');
  */
 export function withPermission<P extends object>(
-  Component: React.ComponentType<P>,
+  Component: ComponentType<P>,
   requiredPermission: string,
-  fallback?: React.ReactNode
+  fallback?: ReactNode
 ) {
   return function PermissionProtectedComponent(props: P) {
     const { hasPermission } = usePermissions();
 
     if (!hasPermission(requiredPermission)) {
-      return fallback || null;
+      return fallback ?? null;
     }
 
-    return <Component {...props} />;
+    return createElement(Component, props);
   };
 }
 
@@ -87,8 +89,8 @@ export function withPermission<P extends object>(
 interface PermissionGuardProps {
   permission: string | string[];
   requireAll?: boolean; // Nếu true, yêu cầu tất cả quyền. Mặc định: false (chỉ cần 1 quyền)
-  fallback?: React.ReactNode;
-  children: React.ReactNode;
+  fallback?: ReactNode;
+  children: ReactNode;
 }
 
 export function PermissionGuard({
@@ -111,10 +113,10 @@ export function PermissionGuard({
   }
 
   if (!hasAccess) {
-    return <>{fallback}</>;
+    return fallback ?? null;
   }
 
-  return <>{children}</>;
+  return children;
 }
 
 /**
