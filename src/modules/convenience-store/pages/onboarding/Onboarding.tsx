@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { 
   X, ArrowRight, ArrowLeft, Check, Rocket, Store, Package,
-  ShoppingCart, BarChart3, Settings, Sparkles, ChevronRight
+  ShoppingCart, BarChart3, Sparkles
 } from 'lucide-react';
 
 interface OnboardingProps {

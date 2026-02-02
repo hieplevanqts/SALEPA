@@ -1,8 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { PackageMinus, Plus, Search, Trash2, X, Printer, ChevronLeft, ChevronRight, ShoppingCart, Receipt, Eye, Edit, AlertTriangle } from 'lucide-react';
+import { PackageMinus, Plus, Search, Trash2, X, Printer, ShoppingCart, Receipt, Eye, Edit, AlertTriangle } from 'lucide-react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import type { StockOutItem, StockOutReceipt } from '../../../../lib/convenience-store-lib/store';
-import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { Pagination } from '../../components/pagination/Pagination';
 
 const STOCK_OUT_REASONS = {
@@ -15,7 +14,6 @@ const STOCK_OUT_REASONS = {
 } as const;
 
 export function StockOutManagement() {
-  const { t } = useTranslation();
   const { products, stockOutReceipts, createStockOutReceipt, updateStockOutReceipt, deleteStockOutReceipt, currentUser } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
@@ -55,15 +53,10 @@ export function StockOutManagement() {
   const filteredProducts = useMemo(() => {
     if (!productSearchQuery) return stockProducts;
     return stockProducts.filter(p => 
-      (p.name || '').toLowerCase().includes(productSearchQuery.toLowerCase()) ||
-      (p.barcode || '').toLowerCase().includes(productSearchQuery.toLowerCase())
+      (p.name ?? p.title ?? '').toLowerCase().includes(productSearchQuery.toLowerCase()) ||
+      (p.barcode ?? p.code ?? '').toLowerCase().includes(productSearchQuery.toLowerCase())
     );
   }, [stockProducts, productSearchQuery]);
-  
-  // Get unique reasons for filter
-  const reasons = useMemo(() => {
-    return Array.from(new Set((stockOutReceipts || []).map(r => r.reason))).filter(Boolean);
-  }, [stockOutReceipts]);
   
   // Filtered receipts
   const filteredReceipts = useMemo(() => {
@@ -135,11 +128,13 @@ export function StockOutManagement() {
   
   // Add product to list
   const handleAddProduct = (productId: string) => {
-    const product = stockProducts.find(p => p.id === productId);
+    const product = stockProducts.find(p => (p.id ?? p._id) === productId);
     if (!product) return;
+    const resolvedProductId = product.id ?? product._id;
+    const productName = product.name ?? product.title;
     
     // Check if already in list
-    const existingIndex = formItems.findIndex(item => item.productId === productId);
+    const existingIndex = formItems.findIndex(item => item.productId === resolvedProductId);
     if (existingIndex >= 0) {
       // Just increase quantity
       const newItems = [...formItems];
@@ -150,8 +145,8 @@ export function StockOutManagement() {
       // Add new with cost price (estimate as 70% of selling price)
       const costPrice = product.price * 0.7;
       const newItem: StockOutItem = {
-        productId: product.id,
-        productName: product.name,
+        productId: resolvedProductId,
+        productName,
         quantity: 1,
         costPrice: costPrice,
         totalPrice: costPrice,
@@ -170,15 +165,6 @@ export function StockOutManagement() {
     const newItems = [...formItems];
     newItems[index].quantity = quantity;
     newItems[index].totalPrice = quantity * newItems[index].costPrice;
-    setFormItems(newItems);
-  };
-  
-  // Update item cost price
-  const handleUpdateCostPrice = (index: number, costPrice: number) => {
-    if (costPrice < 0) return;
-    const newItems = [...formItems];
-    newItems[index].costPrice = costPrice;
-    newItems[index].totalPrice = newItems[index].quantity * costPrice;
     setFormItems(newItems);
   };
   
@@ -205,8 +191,9 @@ export function StockOutManagement() {
     
     // Validate stock for all items
     for (const item of formItems) {
-      const product = stockProducts.find(p => p.id === item.productId);
-      if (!product || item.quantity > product.stock) {
+      const product = stockProducts.find(p => (p.id ?? p._id) === item.productId);
+      const stock = product?.stock ?? product?.quantity ?? 0;
+      if (!product || item.quantity > stock) {
         alert(`Sản phẩm "${item.productName}" không đủ tồn kho để xuất!`);
         return;
       }
@@ -218,6 +205,7 @@ export function StockOutManagement() {
       notes: formNotes,
       items: formItems,
       totalAmount: calculateTotal(),
+      staffName: currentUser?.fullName || currentUser?.username || 'Hệ thống',
     };
     
     if (editingReceipt) {
@@ -701,26 +689,31 @@ export function StockOutManagement() {
                               Không tìm thấy sản phẩm
                             </div>
                           ) : (
-                            filteredProducts.map(product => (
+                            filteredProducts.map(product => {
+                              const productId = product.id ?? product._id;
+                              const productName = product.name ?? product.title;
+                              const stock = product.stock ?? product.quantity ?? 0;
+                              return (
                               <button
-                                key={product.id}
-                                onClick={() => handleAddProduct(product.id)}
+                                key={productId}
+                                onClick={() => handleAddProduct(productId)}
                                 className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100 last:border-b-0"
                               >
                                 <div>
-                                  <p className="text-sm font-medium text-gray-900">{product.name}</p>
-                                  {product.barcode && (
-                                    <p className="text-xs text-gray-500 mt-0.5">Mã: {product.barcode}</p>
+                                  <p className="text-sm font-medium text-gray-900">{productName}</p>
+                                  {(product.barcode ?? product.code) && (
+                                    <p className="text-xs text-gray-500 mt-0.5">Mã: {product.barcode ?? product.code}</p>
                                   )}
                                 </div>
                                 <div className="text-right">
                                   <p className="text-xs text-gray-500">Tồn kho</p>
-                                  <p className={`text-sm font-semibold ${product.stock > 0 ? 'text-gray-900' : 'text-red-600'}`}>
-                                    {product.stock}
+                                  <p className={`text-sm font-semibold ${stock > 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                                    {stock}
                                   </p>
                                 </div>
                               </button>
-                            ))
+                            );
+                            })
                           )}
                         </div>
                       )}

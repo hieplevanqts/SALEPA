@@ -128,7 +128,7 @@ export function CustomerView() {
   };
 
   // Get product emoji
-  const getProductEmoji = (category: string) => {
+  const getProductEmoji = (category?: string) => {
     const emojiMap: { [key: string]: string } = {
       'Đồ uống': '🥤',
       'Đồ ăn': '🍜',
@@ -138,6 +138,9 @@ export function CustomerView() {
       'Món Nhật': '🍣',
       'Món Thái': '🍛',
     };
+    if (!category) {
+      return '🍽️';
+    }
     return emojiMap[category] || '🍽️';
   };
 

@@ -721,24 +721,29 @@ export function StockInManagement() {
                               Không tìm thấy sản phẩm
                             </div>
                           ) : (
-                            filteredProducts.map(product => (
+                            filteredProducts.map(product => {
+                              const productId = product.id ?? product._id;
+                              const productName = product.name ?? product.title;
+                              const stock = product.stock ?? product.quantity ?? 0;
+                              return (
                               <button
-                                key={product.id}
-                                onClick={() => handleAddProduct(product.id)}
+                                key={productId}
+                                onClick={() => handleAddProduct(productId)}
                                 className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100 last:border-b-0"
                               >
                                 <div>
-                                  <p className="text-sm font-medium text-gray-900">{product.name}</p>
-                                  {product.barcode && (
-                                    <p className="text-xs text-gray-500 mt-0.5">Mã: {product.barcode}</p>
+                                  <p className="text-sm font-medium text-gray-900">{productName}</p>
+                                  {(product.barcode ?? product.code) && (
+                                    <p className="text-xs text-gray-500 mt-0.5">Mã: {product.barcode ?? product.code}</p>
                                   )}
                                 </div>
                                 <div className="text-right">
                                   <p className="text-xs text-gray-500">Tồn kho</p>
-                                  <p className="text-sm font-semibold text-gray-900">{product.stock}</p>
+                                  <p className="text-sm font-semibold text-gray-900">{stock}</p>
                                 </div>
                               </button>
-                            ))
+                            );
+                            })
                           )}
                         </div>
                       )}

@@ -1,7 +1,6 @@
-import { DollarSign, Package, CheckCircle, XCircle, CreditCard, Printer, ChevronDown, Users, MessageSquare, X, Clock, Phone, Calendar, ShoppingBag, FileText, Edit, Trash2, ArrowLeft, Smartphone, QrCode, Zap, Check, Banknote } from 'lucide-react';
+import { DollarSign, CreditCard, Printer, Users, X, Clock, Phone, ShoppingBag, FileText, Edit, Trash2, ArrowLeft, Smartphone, QrCode, Zap, Check, Banknote } from 'lucide-react';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { useEffect, useState } from 'react';
-import { AppSidebar } from '../../components/layout/AppSidebar';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import { toast } from 'sonner';
 
@@ -16,7 +15,7 @@ interface OrderDetailFullScreenProps {
 
 type PaymentMethodType = 'cash' | 'card' | 'transfer' | 'momo' | 'zalopay' | 'vnpay';
 
-export function OrderDetailFullScreen({ order, onClose, onCollectPayment, onPrintReceipt, onEdit, onDelete }: OrderDetailFullScreenProps) {
+export function OrderDetailFullScreen({ order, onClose, onPrintReceipt, onEdit, onDelete }: OrderDetailFullScreenProps) {
   const { t } = useTranslation();
   const { updateOrder } = useStore();
   const isPaid = order.paymentStatus === 'paid';
@@ -24,11 +23,8 @@ export function OrderDetailFullScreen({ order, onClose, onCollectPayment, onPrin
   const isUnderPaid = receivedAmount < order.total;
   
   // Display amount: if paid more than total, show total; otherwise show actual amount
-  const displayReceivedAmount = receivedAmount > order.total ? order.total : receivedAmount;
-
   // Get current user info from localStorage
   const currentUser = localStorage.getItem('salepa_username') || '';
-  const userRole = (localStorage.getItem('salepa_userRole') as 'admin' | 'cashier' | 'technician') || 'admin';
 
   // Payment modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
