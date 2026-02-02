@@ -7,11 +7,11 @@ interface CartItemCardProps {
   onUpdateQuantity: (id: string, quantity: number) => void;
   onUpdateNote?: (id: string, note: string) => void;
   onRemove: (id: string) => void;
-  compact?: boolean;
 }
 
-export function CartItemCard({ item, onUpdateQuantity, onUpdateNote, onRemove, compact = false }: CartItemCardProps) {
+export function CartItemCard({ item, onUpdateQuantity, onUpdateNote, onRemove }: CartItemCardProps) {
   const { t } = useTranslation();
+  const itemId = item.id ?? item._id;
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-all">
@@ -44,7 +44,7 @@ export function CartItemCard({ item, onUpdateQuantity, onUpdateNote, onRemove, c
           </div>
         </div>
         <button
-          onClick={() => onRemove(item.id)}
+          onClick={() => onRemove(itemId)}
           className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
           title={t('remove')}
         >
@@ -56,7 +56,7 @@ export function CartItemCard({ item, onUpdateQuantity, onUpdateNote, onRemove, c
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5">
           <button
-            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+            onClick={() => onUpdateQuantity(itemId, item.quantity - 1)}
             className="w-8 h-8 bg-white border border-gray-300 rounded-lg flex items-center justify-center hover:border-blue-500 hover:bg-blue-50 transition-all"
           >
             <Minus className="w-4 h-4 text-gray-700" />
@@ -65,7 +65,7 @@ export function CartItemCard({ item, onUpdateQuantity, onUpdateNote, onRemove, c
             <span className="text-sm font-bold text-blue-600">{item.quantity}</span>
           </div>
           <button
-            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+            onClick={() => onUpdateQuantity(itemId, item.quantity + 1)}
             className="w-8 h-8 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center transition-all"
           >
             <Plus className="w-4 h-4 text-white" />
@@ -89,7 +89,7 @@ export function CartItemCard({ item, onUpdateQuantity, onUpdateNote, onRemove, c
             type="text"
             placeholder={t('note') || 'Note'}
             value={item.note || ''}
-            onChange={(e) => onUpdateNote(item.id, e.target.value)}
+            onChange={(e) => onUpdateNote(itemId, e.target.value)}
             className="w-full pl-7 pr-2 py-1 text-xs border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
           />
         </div>

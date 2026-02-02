@@ -3,15 +3,12 @@ import { useStore } from '../../../../lib/restaurant-lib/store';
 import type { Table, TableReservation } from '../../../../lib/restaurant-lib/store';
 import { Search, Plus, Edit, Trash2, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 
 type ViewMode = 'tables' | 'reservations';
 
 export default function TableManagement() {
-  const { t } = useTranslation();
   const {
     tables,
-    tableReservations,
     createTable,
     updateTable,
     deleteTable,
@@ -22,7 +19,6 @@ export default function TableManagement() {
     updateReservationStatus,
     getTableReservations,
     currentUser,
-    orders, // Add orders to show current table orders
   } = useStore();
 
   const [viewMode, setViewMode] = useState<ViewMode>('tables');
@@ -264,17 +260,6 @@ export default function TableManagement() {
       case 'no-show': return 'bg-gray-100 text-gray-700';
       case 'completed': return 'bg-purple-100 text-purple-700';
       default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getReservationStatusText = (status: TableReservation['status']) => {
-    switch (status) {
-      case 'confirmed': return 'Đã xác nhận';
-      case 'arrived': return 'Đã đến';
-      case 'cancelled': return 'Đã hủy';
-      case 'no-show': return 'Không đến';
-      case 'completed': return 'Hoàn thành';
-      default: return status;
     }
   };
 

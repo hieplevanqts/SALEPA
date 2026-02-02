@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
-import type { Customer } from '../../../../lib/convenience-store-lib/store';
+import type { Customer, Order } from '../../../../lib/convenience-store-lib/store';
 import { 
   Plus, Search, Eye, Edit, Trash2, Users, Phone, MapPin, 
-  ShoppingBag, CreditCard, TrendingUp, DollarSign, 
-  ArrowUpDown, Grid3x3, List, FileSpreadsheet, Award, UserCheck
+  ShoppingBag, TrendingUp,
+  ArrowUpDown, Grid3x3, List, FileSpreadsheet
 } from 'lucide-react';
 import { CustomerForm } from '../../components/customers/CustomerForm';
 import { CustomerDetailView } from '../../components/customers/CustomerDetailView';
@@ -40,7 +40,7 @@ const getCustomerAvatar = (name: string): string => {
 
 export function CustomerManagement({ onViewOrder }: CustomerManagementProps = {}) {
   const { t } = useTranslation();
-  const { customers, customerTypes, deleteCustomer, orders, addCustomer, createCustomerTreatmentPackage, createAppointment } = useStore();
+  const { customers, customerTypes, deleteCustomer, orders } = useStore();
   
   // UI States
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,6 +61,11 @@ export function CustomerManagement({ onViewOrder }: CustomerManagementProps = {}
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Calculate customers with stats from orders
+  const getPaidAmount = (order: Order) =>
+    order.receivedAmount ??
+    (order as { paidAmount?: number }).paidAmount ??
+    0;
+
   const customersWithStats = useMemo(() => {
     return customers
       .filter(customer => !customer.deleted_at)
@@ -69,7 +74,7 @@ export function CustomerManagement({ onViewOrder }: CustomerManagementProps = {}
           order.customerPhone === customer.phone && order.status !== 'cancelled'
         );
         const totalPaid = customerOrders.reduce((sum, order) => {
-          const received = order.receivedAmount || order.paidAmount || 0;
+          const received = getPaidAmount(order);
           const cappedReceived = received > order.total ? order.total : received;
           return sum + cappedReceived;
         }, 0);

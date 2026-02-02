@@ -2,11 +2,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import type { Supplier } from '../../../../lib/restaurant-lib/store';
 import { Plus, Search, Edit, Trash2, Building2 } from 'lucide-react';
-import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
 
 export function SupplierManagement() {
-  const { t } = useTranslation();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'recent'>('name');
@@ -47,12 +45,12 @@ export function SupplierManagement() {
     });
 
     // Sort
-    return [...(suppliers ?? [])].sort((a, b) => {
-    if (sortBy === 'name') {
-      return a.name.localeCompare(b.name, 'vi');
-    }
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+    return [...(result ?? [])].sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name, 'vi');
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 }, [suppliers, searchQuery, sortBy, statusFilter]);
 
   // Pagination logic

@@ -1,15 +1,14 @@
 // components/Menu.tsx
-import { Link } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import { useStore } from "../../../lib/convenience-store-lib/store";
 import { translations } from "../../../lib/convenience-store-lib/i18n";
-import type { IndustryType } from "../../../lib/convenience-store-lib/store";
+import type { IndustryType } from "../pages/system/IndustrySelection";
 import { loadDemoTreatmentPackages } from "../../../lib/convenience-store-lib/demoData";
 import logoFull from "../../../assets/da526f2429ac0b8456776974a6480c4f4260145c.png";
 import logoIcon from "../../../assets/f71a990f243f87339543c6b7dbfdaca1ddb212f4.png";
 import "../../../lib/convenience-store-lib/demoPackagesV2";
 import { useNavigate, useLocation } from "react-router-dom";
-import type { Tab } from "../components/navigation/tabs";
+import type { Tab as NavTab } from "../components/navigation/tabs";
 import { TAB_ROUTE_MAP } from "../components/navigation/tabRouteMap";
 
 import ProfileMenu from '../components/profile/ProfileMenu';
@@ -19,7 +18,6 @@ import {
     Package,
     Settings as SettingsIcon,
     BarChart3,
-    HelpCircle,
     Languages,
     ClipboardList,
     Users,
@@ -29,21 +27,16 @@ import {
     ChevronLeft,
     ChevronRight,
     FolderOpen,
-    Calendar,
     Warehouse,
 } from "lucide-react";
 
-
-type UserRole = "admin" | "cashier" | "technician";
 
 export default function Menu() {
     /** ✅ BẮT BUỘC cho App Router */
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [mounted, setMounted] = useState(false);
     const pathname = location.pathname;
-    const [activeTab, setActiveTab] = useState<Tab>("dashboard");
     const [accountMenuExpanded, setAccountMenuExpanded] =
         useState(false);
     const [reportMenuExpanded, setReportMenuExpanded] =
@@ -59,10 +52,8 @@ export default function Menu() {
         useState(false);
     const [showIndustrySelection, setShowIndustrySelection] =
         useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [currentUser, setCurrentUser] = useState("");
     const authRaw = localStorage.getItem("auth");
-    const userRole = JSON.parse(authRaw);
+    const userRole = JSON.parse(authRaw || "null");
 
 
     const {
@@ -70,43 +61,28 @@ export default function Menu() {
         setLanguage,
         sidebarCollapsed,
         toggleSidebar,
-        users,
         theme,
         fontSize,
         compactMode,
     } = useStore();
 
     const t = translations[language];
-    const [showHelp, setShowHelp] = useState(false);
 
     /** ✅ CHỈ ĐỌC localStorage SAU KHI MOUNT */
     useEffect(() => {
-        setMounted(true);
-
         const onboardingCompleted =
             localStorage.getItem("salepa_onboarding_completed") ===
             "true";
         const industrySelected = localStorage.getItem(
             "salepa_industry_selected",
         );
-        const savedLoginState =
-            localStorage.getItem("salepa_isLoggedIn") === "true";
-        const rememberMe =
-            localStorage.getItem("salepa_rememberMe") === "true";
-
         setShowOnboardingScreen(!onboardingCompleted);
         setShowIndustrySelection(
             onboardingCompleted && !industrySelected,
         );
-        setIsLoggedIn(savedLoginState && rememberMe);
-        setCurrentUser(
-            localStorage.getItem("salepa_username") || "",
-        );
-       
-
-        if (industrySelected) {
+        if (industrySelected === "retail") {
             const { loadIndustryData } = useStore.getState();
-            loadIndustryData(industrySelected as IndustryType);
+            loadIndustryData(industrySelected);
         }
     }, []);
 
@@ -173,79 +149,16 @@ export default function Menu() {
             loadIndustryData(savedIndustry);
         }
 
-        // Keyboard shortcut for help
-        const handleKeyPress = (e: KeyboardEvent) => {
-            if (e.key === "F1") {
-                e.preventDefault();
-                setShowHelp(true);
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyPress);
-
         // Expose demo data loader to window for easy testing
         (window as any).loadDemoPackages = () => {
             loadDemoTreatmentPackages();
             window.location.reload();
         };
 
-        return () =>
-            window.removeEventListener("keydown", handleKeyPress);
+        return undefined;
     }, [showOnboardingScreen, showIndustrySelection]);
 
-    const handleOnboardingComplete = () => {
-        localStorage.setItem("salepa_onboarding_completed", "true");
-        setShowOnboardingScreen(false);
-        setShowIndustrySelection(true); // Show industry selection after onboarding
-    };
-
-    const handleOnboardingSkip = () => {
-        localStorage.setItem("salepa_onboarding_completed", "true");
-        setShowOnboardingScreen(false);
-        setShowIndustrySelection(true); // Show industry selection after skipping
-    };
-
-    const handleIndustrySelect = (industry: IndustryType) => {
-        localStorage.setItem("salepa_industry_selected", industry);
-
-        // Load industry-specific demo data
-        const { loadIndustryData } = useStore.getState();
-        loadIndustryData(industry);
-
-        setShowIndustrySelection(false);
-        // After industry selection, user will see login screen
-    };
-
-    const handleIndustrySkip = () => {
-        // Set default industry as Spa
-        const defaultIndustry = "spa-service";
-        localStorage.setItem(
-            "salepa_industry_selected",
-            defaultIndustry,
-        );
-
-        // Load industry data
-        const { loadIndustryData } = useStore.getState();
-        loadIndustryData(defaultIndustry);
-
-        setShowIndustrySelection(false);
-    };
-
-    const handleQuickAction = (action: string) => {
-        switch (action) {
-            case "new-sale":
-                navigate(`/${TAB_ROUTE_MAP["sales"]}`);
-                break;
-            case "add-product":
-                navigate(`/${TAB_ROUTE_MAP["products"]}`);
-                break;
-            case "view-reports":
-                navigate(`/${TAB_ROUTE_MAP["reports"]}`);
-                break;
-        }
-    };
-
-    const handleTabChange = (tab: Tab) => {
+    const handleTabChange = (tab: NavTab) => {
         const path = TAB_ROUTE_MAP[tab];
 
         if (path !== undefined) {
@@ -262,38 +175,10 @@ export default function Menu() {
         localStorage.removeItem("salepa_userRole");
 
         // Reset login state
-        setIsLoggedIn(false);
-        setCurrentUser("");
         // setUserRole("admin");
         navigate("/convenience/login");
         // Don't reload - just show login screen
         // window.location.reload(); // ← REMOVED
-    };
-
-    const handleLogin = (
-        username: string,
-        rememberMe: boolean,
-        role: UserRole,
-    ) => {
-        // Save login state
-        localStorage.setItem("salepa_isLoggedIn", "true");
-        localStorage.setItem("salepa_username", username);
-        localStorage.setItem(
-            "salepa_rememberMe",
-            rememberMe.toString(),
-        );
-        localStorage.setItem("salepa_userRole", role);
-
-        setIsLoggedIn(true);
-        setCurrentUser(username);
-        // setUserRole(role);
-
-        // Redirect based on role to their first accessible page
-        if (role === "admin") {
-            navigate("/");
-        } else {
-            navigate(`/${TAB_ROUTE_MAP.sales}`);
-        }
     };
 
     // Permission check helper based on role groups

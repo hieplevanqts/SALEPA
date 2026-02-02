@@ -4,7 +4,6 @@ import {
   ShoppingBag,
   TrendingUp,
   Package,
-  DollarSign,
   AlertTriangle,
   ChevronDown,
   Calendar,
@@ -32,7 +31,7 @@ type TimeFilter =
   | "custom";
 
 export function Dashboard() {
-  const { orders: ordersRaw, products, customers } = useStore();
+  const { orders: ordersRaw, products } = useStore();
   const { t } = useTranslation();
 
   // Time filter state
@@ -43,21 +42,7 @@ export function Dashboard() {
   const [showCustomDatePicker, setShowCustomDatePicker] =
     useState(false);
 
-  // Normalize orders to array
-  const ordersArray = Array.isArray(ordersRaw)
-    ? ordersRaw
-    : Object.values(ordersRaw || {});
-
-  // Filter out invalid orders
-  const orders = ordersArray.filter((order) => {
-    return (
-      order &&
-      typeof order === "object" &&
-      order.id &&
-      order.total !== undefined &&
-      order.date
-    );
-  });
+  const orders = ordersRaw ?? [];
 
   // Get filtered orders
   const getFilteredOrders = () => {
@@ -163,13 +148,14 @@ export function Dashboard() {
     0,
   );
   const totalOrders = filteredOrders.length;
-  const lowStockProducts = activeProducts.filter(
-    (p) => p.stock < 10,
-  );
-  const inventoryValue = activeProducts.reduce(
-    (sum, p) => sum + p.price * p.stock,
-    0,
-  );
+  const lowStockProducts = activeProducts.filter((p) => {
+    const stock = p.stock ?? p.quantity ?? 0;
+    return stock < 10;
+  });
+  const inventoryValue = activeProducts.reduce((sum, p) => {
+    const stock = p.stock ?? p.quantity ?? 0;
+    return sum + p.price * stock;
+  }, 0);
 
   // Get revenue for last 12 time periods
   const getLast12Periods = () => {
@@ -215,9 +201,7 @@ export function Dashboard() {
     { revenue: number; quantity: number }
   > = {};
   filteredOrders.forEach((order) => {
-    const items = Array.isArray(order.items)
-      ? order.items
-      : Object.values(order.items || {});
+    const items = order.items ?? [];
     items.forEach((item) => {
       if (
         !item ||
@@ -286,9 +270,7 @@ export function Dashboard() {
     { name: string; quantity: number; revenue: number }
   > = {};
   filteredOrders.forEach((order) => {
-    const items = Array.isArray(order.items)
-      ? order.items
-      : Object.values(order.items || {});
+    const items = order.items ?? [];
     items.forEach((item) => {
       if (
         !item ||
@@ -575,8 +557,8 @@ export function Dashboard() {
                   borderRadius: "8px",
                   fontSize: "12px",
                 }}
-                formatter={(value: number) => [
-                  `${value.toLocaleString("vi-VN")}đ`,
+                formatter={(value: number | undefined) => [
+                  `${(value ?? 0).toLocaleString("vi-VN")}đ`,
                   "Doanh thu",
                 ]}
               />
@@ -636,8 +618,8 @@ export function Dashboard() {
                   borderRadius: "8px",
                   fontSize: "12px",
                 }}
-                formatter={(value: number) => [
-                  `${value.toLocaleString("vi-VN")}đ`,
+                formatter={(value: number | undefined) => [
+                  `${(value ?? 0).toLocaleString("vi-VN")}đ`,
                   "Doanh thu",
                 ]}
               />

@@ -1,5 +1,4 @@
 import type { Order, Customer } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import logoSalepa from "../../../../assets/da526f2429ac0b8456776974a6480c4f4260145c.png";
 
 interface InvoicePDFDocumentProps {
@@ -9,8 +8,6 @@ interface InvoicePDFDocumentProps {
 }
 
 export function InvoicePDFDocument({ order, zoom, customer }: InvoicePDFDocumentProps) {
-  const { t } = useTranslation();
-  
   // Company information (should be from settings)
   const companyInfo = {
     name: 'CÔNG TY CỔ PHẦN SALEPA',
@@ -23,10 +20,8 @@ export function InvoicePDFDocument({ order, zoom, customer }: InvoicePDFDocument
   // Calculate VAT (10%)
   const vatRate = 0.1;
   const subtotalBeforeVAT = order.subtotal / (1 + vatRate);
-  const vatAmount = order.subtotal - subtotalBeforeVAT;
-
   // Get items array
-  const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+  const items = order.items ?? [];
 
   // Format invoice number from order.id (HD + DDMMYY + 0001)
   const invoiceNumber = order.id;

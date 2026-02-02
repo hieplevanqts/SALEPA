@@ -451,6 +451,7 @@ export interface CustomerType {
   tenant_id: string;
   code: string;
   name: string;
+  id?: string; // Legacy alias for _id
   priority: number;
   min_spent: number; // Ngưỡng chi tiêu tối thiểu để được hạng này
   status: 0 | 1; // 0 = inactive, 1 = active

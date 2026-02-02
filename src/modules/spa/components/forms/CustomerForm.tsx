@@ -140,7 +140,11 @@ export function CustomerForm({ customer, onClose }: CustomerFormProps) {
 
     // Invoice information - validate format but not required
     if (formData.taxCode && !/^[0-9]{10}$|^[0-9]{13}$/.test(formData.taxCode.replace(/\s/g, ''))) {
-      newErrors.taxCode = t.customerData?.errors?.taxCodeInvalid || 'Mã số thuế phải có 10 hoặc 13 số';
+      const taxCodeError =
+        formData.customerType === 'organization'
+          ? t.customerData?.errors?.taxCodeInvalidOrg
+          : t.customerData?.errors?.taxCodeInvalidInd;
+      newErrors.taxCode = taxCodeError || 'Mã số thuế phải có 10 hoặc 13 số';
     }
 
     if (formData.phoneInvoice && !/^[0-9]{10}$/.test(formData.phoneInvoice.replace(/\s/g, ''))) {
@@ -158,10 +162,15 @@ export function CustomerForm({ customer, onClose }: CustomerFormProps) {
       return;
     }
 
+    const customerPayload = {
+      ...formData,
+      gender: formData.gender || undefined,
+    };
+
     if (isEdit && customer) {
-      updateCustomer(customer.id, formData);
+      updateCustomer(customer.id, customerPayload);
     } else {
-      addCustomer(formData);
+      addCustomer(customerPayload);
     }
 
     onClose();

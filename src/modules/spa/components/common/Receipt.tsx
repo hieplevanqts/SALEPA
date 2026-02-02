@@ -1,6 +1,5 @@
 import { X, Printer } from 'lucide-react';
 import { useStore } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 
 interface ReceiptProps {
   order: {
@@ -24,7 +23,7 @@ interface ReceiptProps {
 
 export function Receipt({ order, onClose }: ReceiptProps) {
   const { settings } = useStore();
-  const { t } = useTranslation();
+  const voucherDiscount = order.voucherDiscount ?? 0;
 
   const handlePrint = () => {
     window.print();
@@ -150,10 +149,10 @@ export function Receipt({ order, onClose }: ReceiptProps) {
                 <span className="font-semibold">-{order.discount.toLocaleString('vi-VN')}đ</span>
               </div>
             )}
-            {order.voucherCode && order.voucherDiscount > 0 && (
+            {order.voucherCode && voucherDiscount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
                 <span>Voucher ({order.voucherCode}):</span>
-                <span className="font-semibold">-{order.voucherDiscount.toLocaleString('vi-VN')}đ</span>
+                <span className="font-semibold">-{voucherDiscount.toLocaleString('vi-VN')}đ</span>
               </div>
             )}
             <div className="flex justify-between items-center pt-3 border-t border-gray-200">

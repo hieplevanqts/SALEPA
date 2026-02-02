@@ -4,7 +4,7 @@ import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import logoImage from '../../../../assets/5674d75012c6e5648856a4090ea134ccbacf662e.png';
 type UserRole = 'admin' | 'cashier' | 'technician';
-interface LoginPayload {
+export interface LoginPayload {
   username: string;
   password?: string;
   rememberMe: boolean;

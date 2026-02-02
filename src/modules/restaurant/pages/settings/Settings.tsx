@@ -12,7 +12,6 @@ import {
 
 export function Settings() {
   const { products, orders: ordersRaw, shifts, clearAllData, updateSettings } = useStore();
-  const get = useStore;
   const { t, language, setLanguage } = useTranslation();
   
   // Normalize orders to array (handle persisted object format)
@@ -43,7 +42,7 @@ export function Settings() {
   // Advanced settings
   const [autoPrint, setAutoPrint] = useState(false);
   const [autoOpenCashDrawer, setAutoOpenCashDrawer] = useState(true);
-  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineMode] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [receiptCopies, setReceiptCopies] = useState(1);
 

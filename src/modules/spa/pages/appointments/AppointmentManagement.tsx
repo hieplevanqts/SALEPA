@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
-import type { Appointment, AppointmentService, Customer, User, Product } from '../../../../lib/spa-lib/store';
+import type { Appointment, AppointmentService } from '../../../../lib/spa-lib/store';
 import {
   Calendar as CalendarIcon, List, Search, Filter, Plus, Edit, Trash2,
-  Clock, User as UserIcon, Phone, Mail, X, Check, AlertCircle,
-  ChevronLeft, ChevronRight, CalendarCheck, UserCircle2, ChevronDown, Eye
+  X, AlertCircle,
+  ChevronLeft, ChevronRight, CalendarCheck, ChevronDown, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
 import TreatmentPackageModal from '../../components/modals/TreatmentPackageModal';
@@ -98,7 +98,6 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
   });
 
   const technicians = users.filter(u => (u.roleGroupId === '3' || u.roleGroupId === '1') && u.isActive);
-  const servicesOnly = products.filter(p => p.productType === 'service');
 
   // ⭐ Close dropdowns when clicking outside
   useEffect(() => {
@@ -454,7 +453,6 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
       };
       
       // Check if status changed to cancelled
-      const statusChanged = editingAppointment.status !== formData.status;
       const isCancelling = editingAppointment.status !== 'cancelled' && formData.status === 'cancelled';
       const isReactivating = editingAppointment.status === 'cancelled' && formData.status !== 'cancelled';
       
@@ -617,58 +615,6 @@ export default function AppointmentManagement({ currentUser = '', userRole = 'ad
 
     setShowPackageModal(false);
     toast.success(`Đã thêm ${sessionNumbers.length} buổi từ gói "${packageName}"`);
-  };
-
-  // OLD: Add service from package (deprecated - remove later)
-  const addServiceFromPackage = (
-    serviceId: string,
-    packageId: string,
-    packageName: string
-  ) => {
-    const product = products.find(p => p.id === serviceId);
-    
-    if (!product) {
-      toast.error('Không tìm thấy dịch vụ!');
-      return;
-    }
-    
-    const startTime = calculateEndTime();
-    const duration = product.duration || 0;
-    const endTime =
-      product.productType === 'service' || product.productType === 'treatment'
-        ? calculateTimeEnd(startTime, duration)
-        : startTime;
-
-    const newService = {
-      instanceId: Date.now().toString() + Math.random(),
-      productId: serviceId,
-      productName: product.name,
-      productType: product.productType ?? 'service',
-      quantity: 1,
-      technicianIds: [],
-      startTime,
-      endTime,
-      useTreatmentPackage: true,
-      treatmentPackageId: packageId,
-      treatmentPackageName: packageName,
-      numberOfSessionsToUse: 1,
-    };
-    
-    setFormData({
-      ...formData,
-      services: [...formData.services, newService],
-    });
-    
-    toast.success(`Đã thêm "${product.name}" từ gói "${packageName}"`);
-  };
-
-  // NEW: Count how many times a service from a package has been added
-  const countServiceFromPackage = (serviceId: string, packageId: string) => {
-    return formData.services.filter(s => 
-      s.productId === serviceId && 
-      s.treatmentPackageId === packageId &&
-      s.useTreatmentPackage
-    ).length;
   };
 
   const handleRemoveService = (index: number) => {

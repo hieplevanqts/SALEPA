@@ -9,9 +9,7 @@ import ProductManagement from '../pages/products/ProductManagement';
 import OrderHistory from '../pages/orders/OrderHistory';
 import Reports from '../pages/reports/Reports';
 import Settings from '../pages/settings/Settings';
-import SelfServiceScreen from '../pages/sales/SelfServiceScreen';
 import CustomerView from '../pages/customers/CustomerView';
-import CashierView from '../pages/sales/CashierView';
 import CustomerManagement from '../pages/customers/CustomerManagement';
 import ProductCategoryManagement from '../pages/products/ProductCategoryManagement';
 import TableAreaManagement from '../pages/tables/TableAreaManagement';
@@ -28,7 +26,7 @@ import OrderManagement from '../pages/orders/OrderManagement';
 import HelpCenter from '../pages/help/HelpCenter';
 import ProfileMenu from '../components/common/ProfileMenu';
 
-import LoginScreen from '../pages/auth/LoginScreen';
+import LoginScreen, { type LoginPayload } from '../pages/auth/LoginScreen';
 import Forbidden403 from '../pages/errors/Forbidden403';
 import NotFound404 from '../pages/errors/NotFound404';
 
@@ -46,6 +44,14 @@ export default function RestaurantRouter() {
         }else if (payload.role === 'technician') {
             navigate('/restaurant/kitchen/orders');
         } 
+    };
+    const handleLogout = () => {
+        localStorage.removeItem('auth');
+        localStorage.removeItem('salepa_isLoggedIn');
+        localStorage.removeItem('salepa_username');
+        localStorage.removeItem('salepa_rememberMe');
+        localStorage.removeItem('salepa_userRole');
+        navigate('/restaurant/login');
     };
     return (
             <Routes>
@@ -68,8 +74,14 @@ export default function RestaurantRouter() {
             <Route path="suppliers" element={<SupplierManagement />} />
 
             <Route path="settings" element={<Settings />} />
-            <Route path="profile" element={<ProfileMenu />} />
-            <Route path="help" element={<HelpCenter />} />
+            <Route
+              path="profile"
+              element={<ProfileMenu onClose={() => navigate(-1)} onLogout={handleLogout} />}
+            />
+            <Route
+              path="help"
+              element={<HelpCenter onClose={() => navigate(-1)} />}
+            />
           </Route>
 
           {/* ===== ADMIN + CASHIER ===== */}

@@ -114,12 +114,6 @@ export function QRPaymentForm({
   }, [timeLeft]);
 
   // Format time
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   // Copy to clipboard
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);

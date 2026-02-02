@@ -1,13 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Package, Plus, Search, Trash2, X, Printer, ChevronLeft, ChevronRight, ShoppingCart, Receipt, Eye, Edit } from 'lucide-react';
+import { Package, Plus, Search, Trash2, X, Printer, ShoppingCart, Receipt, Eye, Edit } from 'lucide-react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import type { StockInItem, StockInReceipt } from '../../../../lib/convenience-store-lib/store';
-import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { Pagination } from '../../components/pagination/Pagination';
 
 export function StockInManagement() {
-  const { t } = useTranslation();
-  const { products, stockInReceipts, createStockInReceipt, updateStockInReceipt, deleteStockInReceipt, currentUser } = useStore();
+  const { products, stockInReceipts, createStockInReceipt, updateStockInReceipt, deleteStockInReceipt } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<StockInReceipt | null>(null);
@@ -47,8 +45,8 @@ export function StockInManagement() {
   const filteredProducts = useMemo(() => {
     if (!productSearchQuery) return stockProducts;
     return stockProducts.filter(p => 
-      (p.name || '').toLowerCase().includes(productSearchQuery.toLowerCase()) ||
-      (p.barcode || '').toLowerCase().includes(productSearchQuery.toLowerCase())
+      (p.name ?? p.title ?? '').toLowerCase().includes(productSearchQuery.toLowerCase()) ||
+      (p.barcode ?? p.code ?? '').toLowerCase().includes(productSearchQuery.toLowerCase())
     );
   }, [stockProducts, productSearchQuery]);
   
@@ -130,11 +128,13 @@ export function StockInManagement() {
   
   // Add product to list
   const handleAddProduct = (productId: string) => {
-    const product = stockProducts.find(p => p.id === productId);
+    const product = stockProducts.find(p => (p.id ?? p._id) === productId);
     if (!product) return;
+    const resolvedProductId = product.id ?? product._id;
+    const productName = product.name ?? product.title;
     
     // Check if already in list
-    const existingIndex = formItems.findIndex(item => item.productId === productId);
+    const existingIndex = formItems.findIndex(item => item.productId === resolvedProductId);
     if (existingIndex >= 0) {
       // Just increase quantity
       const newItems = [...formItems];
@@ -144,8 +144,8 @@ export function StockInManagement() {
     } else {
       // Add new
       const newItem: StockInItem = {
-        productId: product.id,
-        productName: product.name,
+        productId: resolvedProductId,
+        productName,
         quantity: 1,
         unitPrice: 0,
         totalPrice: 0,
