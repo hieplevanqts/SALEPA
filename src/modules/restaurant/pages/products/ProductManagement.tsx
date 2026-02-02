@@ -4,9 +4,9 @@ import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
   Plus, Pencil, Edit, Trash2, X, Search, Download, 
   Package, Sparkles, Clock, Calendar,
-  RefreshCw, Grid, List, ArrowUpDown, Copy, Zap, Upload, Link2, Trash, UtensilsCrossed, Minus
+  RefreshCw, Grid, List, Copy, Zap, Upload, Link2, Trash, UtensilsCrossed, Minus
 } from 'lucide-react';
-import type { Product, TreatmentSessionDetail } from '../../../../lib/restaurant-lib/store';
+import type { ComboItem, Product, TreatmentSessionDetail } from '../../../../lib/restaurant-lib/store';
 // import { supabaseService } from '../../../../lib/restaurant-lib/supabaseService'; // Removed - using localStorage only
 import { Pagination } from '../../components/common/Pagination';
 import { toast } from 'sonner';
@@ -15,13 +15,14 @@ type ViewMode = 'grid' | 'list';
 type SortField = 'name' | 'price' | 'category';
 type SortOrder = 'asc' | 'desc';
 type ProductType = 'product' | 'service' | 'treatment' | 'combo' | 'food' | 'inventory' | 'all';
+type EditableProductType = Exclude<ProductType, 'all'>;
 
 interface ProductManagementProps {
   userRole?: 'admin' | 'cashier' | 'technician';
 }
 
 export function ProductManagement({ userRole = 'admin' }: ProductManagementProps) {
-  const { products, addProduct, updateProduct, deleteProduct, categories: storeCategories, selectedIndustry } = useStore();
+  const { products, addProduct, updateProduct, deleteProduct, categories: storeCategories } = useStore();
   const { t } = useTranslation();
   
   // Check if user has edit permissions (only admin can edit)
@@ -57,21 +58,27 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
   const [treatmentSessions, setTreatmentSessions] = useState<TreatmentSessionDetail[]>([]);
   
   // Combo items - for F&B
-  const [comboItems, setComboItems] = useState<Array<{
-    productId: string;
-    productName: string;
-    productCategory: string;
-    productPrice: number;
-    productUnit: string;
-    quantity: number;
-  }>>([]);
+  const [comboItems, setComboItems] = useState<ComboItem[]>([]);
 
   // Product selector modal state
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [productSearchQuery, setProductSearchQuery] = useState('');
   
   // Form States
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    price: string;
+    costPrice: string;
+    category: string;
+    stock: string;
+    barcode: string;
+    image: string;
+    productType: EditableProductType;
+    duration: string;
+    sessions: string;
+    description: string;
+    unit: string;
+  }>({
     name: '',
     price: '',
     costPrice: '',
@@ -79,7 +86,7 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
     stock: '',
     barcode: '',
     image: '',
-    productType: 'product' as 'product' | 'service' | 'treatment' | 'combo',
+    productType: 'product',
     duration: '',
     sessions: '',
     description: '',
@@ -354,15 +361,6 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
   const cancelDelete = () => {
     setShowDeleteConfirm(false);
     setProductToDelete(null);
-  };
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
-    }
   };
 
   const handleDuplicateProduct = (product: Product) => {

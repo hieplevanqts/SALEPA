@@ -245,7 +245,18 @@ export interface Permission {
   id: string;
   name: string;
   description: string;
-  category: "system" | "sales" | "management" | "reports";
+  category:
+    | "system"
+    | "sales"
+    | "management"
+    | "reports"
+    | "invoices"
+    | "customers"
+    | "products"
+    | "inventory"
+    | "account"
+    | "product_categories"
+    | "customer_types";
 }
 
 export interface RoleGroup {

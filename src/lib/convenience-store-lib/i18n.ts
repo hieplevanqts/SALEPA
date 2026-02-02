@@ -1230,8 +1230,6 @@ export const translations = {
     selectService: "Select Service",
     addSession: "Add Session",
     removeSession: "Remove Session",
-    inThe: "In the",
-
     // Currency
     vnd: "đ",
     items_count: "items",
