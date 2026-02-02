@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { X, User, Phone, Mail, MapPin, Calendar, Edit, Trash2, Cake, Hash, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, Package, CheckCircle, XCircle, CircleDot, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Phone, MapPin, Calendar, Edit, Trash2, Cake, Hash, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, Package, CheckCircle, CircleDot, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import type { Customer } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
@@ -27,6 +27,10 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
   const customerTaxCode = customer.taxCode ?? customer.tax_code;
   const customerTotalSpent = customer.totalSpent ?? customer.total_spent ?? 0;
   const customerOrderCount = customer.orderCount ?? customer.total_orders ?? 0;
+  const getTranslation = (key: string, fallback: string) => {
+    const value = t(key);
+    return value === key ? fallback : value;
+  };
 
   // Get customer orders
   const customerOrders = useMemo(() => {
@@ -291,7 +295,7 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
                   {customerGender && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <span className="text-blue-600">👤</span>
-                      <span>{(t.customerData as Record<string, string> | undefined)?.[customerGender] || customerGender}</span>
+                      <span>{getTranslation(`customerData.${customerGender}`, customerGender)}</span>
                     </div>
                   )}
 
@@ -760,8 +764,7 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
                                                       <span className="inline-flex items-center">
                                                         <span className="font-medium">Loại:</span>
                                                         <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
-                                                          {item.productType === 'service' ? 'Dịch vụ' : 
-                                                           item.productType === 'treatment' ? 'Liệu trình' : 'Sản phẩm'}
+                                                          {item.productType === 'service' ? 'Dịch vụ' : 'Sản phẩm'}
                                                         </span>
                                                       </span>
                                                       {item.duration && (

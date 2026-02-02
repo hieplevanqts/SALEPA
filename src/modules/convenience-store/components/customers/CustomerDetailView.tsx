@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { User, Phone, Mail, MapPin, Calendar, Edit, Trash2, Cake, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, ArrowLeft, Package, Scissors, TrendingUp, Printer, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit, Trash2, AlertCircle, ShoppingBag, Clock, CreditCard, ArrowLeft } from 'lucide-react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import type { Customer, Order } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
@@ -16,98 +16,30 @@ interface CustomerDetailViewProps {
 
 type TabType = 'overview' | 'purchases';
 
-export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onViewOrder }: CustomerDetailViewProps) {
+export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: CustomerDetailViewProps) {
   const { t } = useTranslation();
-  const { orders, products, deleteOrder, customerTreatmentPackages, getCustomerActivePackages, customerTypes } = useStore();
+  const { orders, deleteOrder, customerTypes } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending' | 'cancelled'>('all');
+  const [filterStatus] = useState<'all' | 'completed' | 'pending' | 'cancelled'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
-  const [expandedPackages, setExpandedPackages] = useState<string[]>([]);
-
-  // Toggle package expansion
-  const togglePackageExpansion = (packageId: string) => {
-    setExpandedPackages(prev => 
-      prev.includes(packageId) 
-        ? prev.filter(id => id !== packageId)
-        : [...prev, packageId]
-    );
-  };
+  const customerPhone = customer.phone ?? '';
 
   // Get customer orders
   const customerOrders = useMemo(() => {
-    const ordersArray = Array.isArray(orders) ? orders : Object.values(orders || {});
-    let result = ordersArray.filter((order) => 
-      order && order.customerPhone === customer.phone
-    );
-    
+    let result = orders.filter((order) => order.customerPhone === customerPhone);
+
     if (filterStatus !== 'all') {
       result = result.filter((order) => order.status === filterStatus);
     }
-    
-    return result.sort((a, b) => new Date(b.timestamp || b.date || '').getTime() - new Date(a.timestamp || a.date || '').getTime());
-  }, [orders, customer.phone, filterStatus]);
 
-  // Get customer treatment packages from store
-  const customerTreatmentPackagesData = useMemo(() => {
-    return customerTreatmentPackages
-      .filter(pkg => pkg.customerId === customer._id)
-      .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
-  }, [customerTreatmentPackages, customer._id]);
-
-  // Extract services from orders
-  const customerServices = useMemo(() => {
-    const services: any[] = [];
-    customerOrders.forEach((order) => {
-      const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
-      items.forEach((item: any) => {
-        if (item && (item.type === 'service' || item.productType === 'service')) {
-          services.push({
-            id: `${order.id}-${item.name}`,
-            name: item.name,
-            serviceDate: order.timestamp || order.date,
-            duration: item.duration || 0,
-            price: item.price,
-            orderId: order.id,
-          });
-        }
-      });
-    });
-    return services;
-  }, [customerOrders]);
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const totalOrders = customer.total_orders; // Use DB value
-    const totalSpent = customer.total_spent; // Use DB value
-    const totalPaid = customerOrders.reduce((sum, order) => {
-      const received = order.receivedAmount || order.paidAmount || 0;
-      // Cap received amount at order total for calculation
-      const cappedReceived = received > order.total ? order.total : received;
-      return sum + cappedReceived;
-    }, 0);
-    const debt = totalSpent - totalPaid;
-    const avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-    const lastVisit = customer.last_purchase_at || customer.created_at;
-    
-    // Get unpaid orders
-    const unpaidOrders = customerOrders.filter(order => {
-      const received = order.receivedAmount || order.paidAmount || 0;
-      const cappedReceived = received > order.total ? order.total : received;
-      return cappedReceived < order.total;
-    });
-    
-    return {
-      totalOrders,
-      totalSpent,
-      totalPaid,
-      debt,
-      avgOrderValue,
-      lastVisit,
-      unpaidOrders,
-    };
-  }, [customerOrders, customer.total_orders, customer.total_spent, customer.last_purchase_at, customer.created_at]);
+    return result.sort(
+      (a, b) =>
+        new Date(b.timestamp || b.date || '').getTime() -
+        new Date(a.timestamp || a.date || '').getTime(),
+    );
+  }, [orders, customerPhone, filterStatus]);
 
   const getCustomerGroupBadge = (group?: string) => {
     const badges = {
@@ -192,8 +124,13 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
     );
   };
 
+  const getPaidAmount = (order: Order) =>
+    order.receivedAmount ??
+    (order as { paidAmount?: number }).paidAmount ??
+    0;
+
   const getPaymentStatusBadge = (order: Order) => {
-    const received = order.receivedAmount || order.paidAmount || 0;
+    const received = getPaidAmount(order);
     const cappedReceived = received > order.total ? order.total : received;
     const isPaid = cappedReceived >= order.total;
     
