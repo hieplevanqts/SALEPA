@@ -4,16 +4,12 @@ import { systemPermissions, defaultRoleGroups } from '../../../../lib/spa-lib/pe
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog';
-import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
-import { Textarea } from '../../components/ui/textarea';
-import { Edit, Trash2, Plus, Search, LayoutDashboard, ShoppingCart, Package, Users, Calendar, Archive, FolderTree, Shield, FileText, ClipboardList } from 'lucide-react';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
+import { Edit, Trash2, Plus, Search, LayoutDashboard, ShoppingCart, Package, Users, Calendar, Archive, FolderTree, Shield, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { Pagination } from '../../components/common/Pagination';
 
 export function RoleGroupManagement() {
-  const { t } = useTranslation();
   const { language } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -33,7 +29,6 @@ export function RoleGroupManagement() {
 
   // Initialize role groups if empty
   const roleGroups = useStore((state) => state.roleGroups);
-  const permissions = useStore((state) => state.permissions);
   
   // Initialize default data on first render
   useEffect(() => {

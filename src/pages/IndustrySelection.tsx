@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from '../lib/convenience-store-lib/useTranslation';
 import { 
-  Coffee, Sparkles, Shirt, ShoppingBag, Smartphone, Heart,
+  Coffee, Sparkles, Shirt, ShoppingBag,
   Check, ArrowRight, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

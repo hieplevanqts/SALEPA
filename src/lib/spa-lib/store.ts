@@ -122,6 +122,15 @@ export interface Order {
   invoiceStatus?: 'not_issued' | 'issued' | 'error'; // Trạng thái HĐDT: Chưa phát hành, Đã phát hành, Phát hành lỗi
 }
 
+export type CreateOrderInput = Omit<
+  Order,
+  'id' | 'items' | 'subtotal' | 'total' | 'date' | 'timestamp' | 'discount'
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
+
 export interface Shift {
   id: string;
   openedBy: string;
@@ -261,6 +270,15 @@ export interface SelfServiceOrder extends Order {
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'served' | 'cancelled';
   orderType: 'dine-in' | 'takeaway';
 }
+
+export type CreateSelfServiceOrderInput = Omit<
+  SelfServiceOrder,
+  'id' | 'items' | 'subtotal' | 'total' | 'date' | 'timestamp' | 'discount'
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
 
 export interface AppointmentService {
   productId: string;
@@ -507,7 +525,7 @@ interface Store {
   clearCart: () => void;
   
   // Order actions
-  createOrder: (orderData: Omit<Order, 'id' | 'items' | 'subtotal' | 'total' | 'date'>) => Order;
+  createOrder: (orderData: CreateOrderInput) => Order;
   updateOrder: (orderId: string, updates: Partial<Order>) => void;
   deleteOrder: (orderId: string) => void;
   setEditingOrder: (order: Order | null) => void;
@@ -564,7 +582,7 @@ interface Store {
   
   // Self-service actions
   setCurrentTable: (table: Table | null) => void;
-  createSelfServiceOrder: (orderData: Omit<SelfServiceOrder, 'id' | 'date' | 'items' | 'subtotal' | 'total'>) => void;
+  createSelfServiceOrder: (orderData: CreateSelfServiceOrderInput) => void;
   updateOrderStatus: (orderId: string, status: SelfServiceOrder['status']) => void;
   addMessageToOrder: (orderId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   
@@ -2011,6 +2029,12 @@ export const useStore = create<Store>()(
       },
       
       createOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          timestamp: orderTimestamp,
+          date: orderDate,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift, currentUser, orders } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -2019,7 +2043,7 @@ export const useStore = create<Store>()(
         const totalDiscount = cart.reduce(
           (sum, item) => sum + (item.discount * item.quantity),
           0
-        ) + (orderData.discount || 0);
+        ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
         
         // Get current user info from localStorage
@@ -2042,12 +2066,12 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
           status: 'pending',
           createdBy: currentUser?.fullName || currentUsername,
-          ...orderData,
+          ...restOrderData,
           paymentHistory: initialPaymentHistory, // Always ensure paymentHistory exists
         };
         
@@ -2537,6 +2561,12 @@ export const useStore = create<Store>()(
       },
       
       createSelfServiceOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          timestamp: orderTimestamp,
+          date: orderDate,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift, selfServiceOrders } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -2545,7 +2575,7 @@ export const useStore = create<Store>()(
         const totalDiscount = cart.reduce(
           (sum, item) => sum + (item.discount * item.quantity),
           0
-        ) + (orderData.discount || 0);
+        ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
         
         const order: SelfServiceOrder = {
@@ -2554,10 +2584,10 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
-          ...orderData,
+          ...restOrderData,
         };
         
         set((state) => ({

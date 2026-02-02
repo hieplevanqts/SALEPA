@@ -4,7 +4,7 @@ import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { Search, Plus, Minus, Trash2, X, Percent, DollarSign, Printer, User, Save, FileText, Keyboard, Barcode, Grid3x3, List, Calculator as CalcIcon, Tag, Clock, Star, MessageSquare, QrCode, Split, UserPlus, Package, Sparkles, Scissors } from 'lucide-react';
 import { Calculator } from '../../components/forms/Calculator';
 import { CustomerForm } from '../../components/forms/CustomerForm';
-import type { Customer } from '../../../../lib/spa-lib/store';
+import type { Customer, PaymentHistory, Product } from '../../../../lib/spa-lib/store';
 
 type PaymentMethodType = 'cash' | 'card' | 'transfer';
 type ProductTypeFilter = 'all' | 'product' | 'service' | 'treatment';
@@ -68,14 +68,14 @@ export function SalesScreen() {
   const allCategories = ['all', ...categories];
 
   // Filter products based on selection
-  let displayProducts = products;
+  let displayProducts: Product[] = products;
   if (productFilter === 'recent') {
     displayProducts = products.filter(p => recentProducts.includes(p.id));
   } else if (productFilter === 'favorite') {
     displayProducts = products.filter(p => favoriteProducts.includes(p.id));
   }
 
-  const filteredProducts = displayProducts.filter((product) => {
+  const filteredProducts: Product[] = displayProducts.filter((product) => {
     const matchesSearch = 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.barcode?.includes(searchQuery);
@@ -319,8 +319,6 @@ export function SalesScreen() {
     setShowHeldBills(false);
   };
 
-  const quickAmounts = [20000, 50000, 100000, 200000, 500000, 1000000];
-
   // Category images mapping
   const categoryImages: Record<string, string> = {
     'Massage': 'https://images.unsplash.com/photo-1745327883508-b6cd32e5dde5?w=400',
@@ -392,10 +390,10 @@ export function SalesScreen() {
     const currentUser = localStorage.getItem('salepa_username') || '';
     
     // Create initial payment history entry for split payment
-    const initialPaymentHistory = [{
+    const initialPaymentHistory: PaymentHistory[] = [{
       id: `PAY-${Date.now()}`,
       amount: totalPaid,
-      paymentMethod: 'cash', // Default for split payment
+      paymentMethod: 'cash' as const, // Default for split payment
       paidAt: new Date().toISOString(),
       paidBy: currentUser,
       note: note || '',
@@ -1498,15 +1496,15 @@ export function SalesScreen() {
                             {bill.customerName || t('walkInCustomer')}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {new Date(bill.createdAt).toLocaleString('vi-VN')}
+                            {new Date(bill.heldAt).toLocaleString('vi-VN')}
                           </div>
                           <div className="text-sm text-gray-600 mt-2">
-                            {bill.cart.length} {t('items_count')}: {bill.cart.map(item => `${item.name} (${item.quantity})`).join(', ')}
+                            {bill.items.length} {t('items_count')}: {bill.items.map(item => `${item.name} (${item.quantity})`).join(', ')}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-orange-600 font-medium text-lg">
-                            {bill.cart.reduce((sum, item) => sum + (item.price - item.discount) * item.quantity, 0).toLocaleString('vi-VN')}{t('vnd')}
+                            {bill.items.reduce((sum, item) => sum + (item.price - item.discount) * item.quantity, 0).toLocaleString('vi-VN')}{t('vnd')}
                           </div>
                         </div>
                       </div>
@@ -1591,6 +1589,7 @@ export function SalesScreen() {
             </div>
             <div className="p-6">
               <CustomerForm
+                customer={null}
                 onClose={() => {
                   setShowCustomerForm(false);
                   // Optionally refresh or update after adding customer

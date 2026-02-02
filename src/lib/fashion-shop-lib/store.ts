@@ -252,9 +252,9 @@ export interface AppointmentService {
   instanceId?: string;
   productId: string;
   productName: string;
-  productType: 'product' | 'service' | 'treatment';
+  productType?: 'product' | 'service' | 'treatment';
   duration: number; // in minutes
-  price: number;
+  price?: number;
   quantity?: number; // For products from treatment packages
   sessionNumber?: number; // For treatment packages
   maxSessions?: number; // Total sessions in treatment package
@@ -267,8 +267,8 @@ export interface AppointmentService {
   // Legacy single-tech fields
   technicianId?: string;
   // ⭐ NEW: Time slot for each service
-  startTime: string; // HH:mm format (e.g., "09:00")
-  endTime: string;   // HH:mm format (e.g., "10:00")
+  startTime?: string; // HH:mm format (e.g., "09:00")
+  endTime?: string;   // HH:mm format (e.g., "10:00")
 }
 
 export interface Appointment {
@@ -2144,6 +2144,12 @@ export const useStore = create<Store>()(
       },
       
       createOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          timestamp: orderTimestamp,
+          date: orderDate,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift, currentUser } = get();
         // ⭐ Calculate subtotal using variantPrice if available, otherwise use original price
         const subtotal = cart.reduce(
@@ -2156,7 +2162,7 @@ export const useStore = create<Store>()(
         const totalDiscount = cart.reduce(
           (sum, item) => sum + (item.discount * item.quantity),
           0
-        ) + (orderData.discount || 0);
+        ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
         
         // Get current user info from localStorage
@@ -2179,12 +2185,12 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
           createdBy: currentUser?.fullName || currentUsername,
-          ...orderData,
-          status: orderData.status || 'completed', // ✅ Use orderData.status if provided, otherwise default to 'completed'
+          ...restOrderData,
+          status: restOrderData.status || 'completed', // ✅ Use orderData.status if provided, otherwise default to 'completed'
           paymentHistory: initialPaymentHistory, // Always ensure paymentHistory exists
         };
         
@@ -2317,9 +2323,9 @@ export const useStore = create<Store>()(
                     const newPackage: CustomerTreatmentPackage = {
                       id: packageId,
                       customerId: customerId,
-                      customerName: orderData.customerName,
+                      customerName: orderData.customerName || '',
                       treatmentProductId: item.id,
-                      treatmentName: item.name,
+                      treatmentName: item.name || '',
                       totalSessions: fullProduct.sessions,
                       usedSessionNumbers: [],
                       remainingSessions: fullProduct.sessions,
@@ -2619,7 +2625,14 @@ export const useStore = create<Store>()(
               categories: uniqueCategories,
             });
           } else {
-            console.error('❌ Failed to load products:', productsResponse.error);
+            const errorMessage =
+              'error' in productsResponse
+                ? productsResponse.error
+                : productsResponse.message;
+            console.error(
+              '❌ Failed to load products:',
+              errorMessage || 'Unknown error',
+            );
           }
         } catch (error) {
           console.error('❌ Error loading products from Mock API:', error);
@@ -2689,6 +2702,12 @@ export const useStore = create<Store>()(
       },
       
       createSelfServiceOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          timestamp: orderTimestamp,
+          date: orderDate,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -2697,7 +2716,7 @@ export const useStore = create<Store>()(
         const totalDiscount = cart.reduce(
           (sum, item) => sum + (item.discount * item.quantity),
           0
-        ) + (orderData.discount || 0);
+        ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
         
         const order: SelfServiceOrder = {
@@ -2706,10 +2725,10 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
-          ...orderData,
+          ...restOrderData,
         };
         
         set((state) => ({
@@ -3216,7 +3235,7 @@ export const useStore = create<Store>()(
       },
       
       updateStockOutReceipt: (receiptId, receiptData) => {
-        const { stockOutReceipts, products, currentUser } = get();
+        const { stockOutReceipts, products } = get();
         const oldReceipt = (stockOutReceipts || []).find(r => r.id === receiptId);
         
         if (oldReceipt) {
@@ -3372,7 +3391,14 @@ export const useStore = create<Store>()(
         
         // Find package that includes this service
         for (const pkg of activePackages) {
-          if (pkg.serviceIds.includes(serviceId)) {
+          const hasService = pkg.sessions.some((session) =>
+            session.items.some(
+              (item) =>
+                item.productType === 'service' &&
+                item.productId === serviceId,
+            ),
+          );
+          if (hasService) {
             return pkg;
           }
         }
@@ -3398,7 +3424,7 @@ export const useStore = create<Store>()(
           
           // Second pass: Add missing codes
           let codeCounter = 1;
-          state.appointments = state.appointments.map((apt, index) => {
+          state.appointments = state.appointments.map((apt) => {
             if (!apt.code) {
               // Generate code for old appointments
               const code = `LH${String(codeCounter).padStart(6, '0')}`;

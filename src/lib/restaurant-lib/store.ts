@@ -69,6 +69,7 @@ export interface SelectedOption {
 export interface CartItem extends Product {
   quantity: number;
   discount: number;
+  type?: string;
   note?: string;
   selectedOptions?: SelectedOption[];
   notifiedQuantity?: number; // F&B Restaurant: Số lượng đã gửi bếp (đã thông báo)
@@ -347,6 +348,7 @@ export interface SelfServiceOrder extends Order {
 }
 
 export interface AppointmentService {
+  instanceId?: string;
   productId: string;
   productName: string;
   productType: 'product' | 'service' | 'treatment';

@@ -5,7 +5,7 @@ import logoImage from '../../../../assets/5674d75012c6e5648856a4090ea134ccbacf66
 
 type UserRole = 'admin' | 'cashier' | 'technician';
 
-interface LoginPayload {
+export interface LoginPayload {
   username: string;
   password?: string;
   rememberMe: boolean;
