@@ -271,6 +271,7 @@ export const demoTreatmentPackage: CustomerTreatmentPackage = {
 export const demoAppointments: Appointment[] = [
   {
     id: 'APT-DEMO-001',
+    code: 'LH-DEMO-001',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
@@ -301,6 +302,7 @@ export const demoAppointments: Appointment[] = [
   },
   {
     id: 'APT-DEMO-002',
+    code: 'LH-DEMO-002',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
@@ -331,6 +333,7 @@ export const demoAppointments: Appointment[] = [
   },
   {
     id: 'APT-DEMO-003',
+    code: 'LH-DEMO-003',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
@@ -374,6 +377,7 @@ export const demoAppointments: Appointment[] = [
   },
   {
     id: 'APT-DEMO-004',
+    code: 'LH-DEMO-004',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
@@ -404,6 +408,7 @@ export const demoAppointments: Appointment[] = [
   },
   {
     id: 'APT-DEMO-005',
+    code: 'LH-DEMO-005',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',

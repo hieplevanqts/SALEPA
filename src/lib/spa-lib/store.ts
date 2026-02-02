@@ -1983,6 +1983,8 @@ export const useStore = create<Store>()(
       roleGroups: defaultRoleGroups,
       userPermissionOverrides: [],
       customerTreatmentPackages: [],
+      stockInReceipts: [],
+      stockOutReceipts: [],
       technicianNotifications: [],
       editingOrder: null,
       
