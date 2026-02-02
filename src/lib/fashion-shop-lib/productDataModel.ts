@@ -523,7 +523,7 @@ export function generateVariantsFromProperties(
     }];
   }
 
-  return combinations.map((combo, index) => {
+  return combinations.map((combo) => {
     // Tạo suffix từ các giá trị thuộc tính
     // VD: Đỏ-M → RED-M
     const suffix = Object.values(combo)

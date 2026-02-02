@@ -59,7 +59,7 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: [] };
   },
-  getProductTag: async (id: string) => {
+  getProductTag: async (_id: string) => {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: false, data: undefined };
   },
@@ -197,7 +197,7 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: [] };
   },
-  getProductAttributeDefinition: async (id: string) => {
+  getProductAttributeDefinition: async (_id: string) => {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: false, data: undefined };
   },
@@ -207,7 +207,7 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: [] };
   },
-  getProductAttributeValue: async (id: string) => {
+  getProductAttributeValue: async (_id: string) => {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: false, data: undefined };
   },
@@ -217,7 +217,7 @@ export const mockApi = {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: true, data: [] };
   },
-  getProductSupplier: async (id: string) => {
+  getProductSupplier: async (_id: string) => {
     await new Promise(resolve => setTimeout(resolve, 100));
     return { success: false, data: undefined };
   },

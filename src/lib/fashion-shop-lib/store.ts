@@ -24,6 +24,7 @@ export interface Product {
   barcode?: string;
   description?: string;
   options?: ProductOption[];
+  type?: 'product' | 'service' | 'treatment'; // Legacy alias for productType
   productType?: 'product' | 'service' | 'treatment'; // For Spa industry
   duration?: number; // For services and treatments (in minutes)
   sessions?: number; // For treatments (number of sessions in package)
@@ -101,7 +102,14 @@ export interface Order {
   note?: string;
   shiftId?: string;
   messages?: ChatMessage[];
-  status?: 'pending' | 'completed' | 'cancelled'; // Add status
+  status?:
+    | 'pending'
+    | 'completed'
+    | 'cancelled'
+    | 'confirmed'
+    | 'preparing'
+    | 'ready'
+    | 'served'; // Add status
   paidAt?: string; // When payment was collected
   receivedAmount?: number; // Amount received from customer
   changeAmount?: number; // Change returned to customer
@@ -256,6 +264,8 @@ export interface AppointmentService {
   // NEW: Multiple technicians assigned to this specific service
   technicianIds?: string[]; // Array of technician IDs
   technicianNames?: string[]; // Array of technician names
+  // Legacy single-tech fields
+  technicianId?: string;
   // ⭐ NEW: Time slot for each service
   startTime: string; // HH:mm format (e.g., "09:00")
   endTime: string;   // HH:mm format (e.g., "10:00")

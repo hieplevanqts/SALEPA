@@ -1252,7 +1252,7 @@ export const mockDataService = {
   },
   getProductVariantById: async (id: string) => mockProductVariants.find(v => v._id === id && !v.deleted_at),
   getProductVariant: async (id: string) => mockProductVariants.find(v => v._id === id && !v.deleted_at),
-  getProductVariantByCode: async (code: string) => mockProductVariants.find(v => v.code === code && !v.deleted_at),
+  getProductVariantByCode: async (code: string) => mockProductVariants.find(v => v.sku === code && !v.deleted_at),
   getProductVariantByBarcode: async (barcode: string) => {
     const variant = mockProductVariants.find(v => v.barcode === barcode && !v.deleted_at);
     console.log(`🔍 [getProductVariantByBarcode] Barcode: ${barcode}, Found:`, variant ? `${variant._id} - ${variant.title}` : 'NOT FOUND');
