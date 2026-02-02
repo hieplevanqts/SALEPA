@@ -363,7 +363,7 @@ export function ProductCategoryManagement() {
 
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
-            {paginatedCategories.map((category, index) => (
+            {paginatedCategories.map((category) => (
               <div
                 key={category.id}
                 className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"

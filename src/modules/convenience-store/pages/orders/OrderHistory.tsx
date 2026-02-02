@@ -139,11 +139,6 @@ export function OrderHistory() {
     currentPage * itemsPerPage
   );
 
-  // Reset to page 1 when filters change
-  const handleFilterChange = () => {
-    setCurrentPage(1);
-  };
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -185,32 +180,6 @@ export function OrderHistory() {
       setSortField(field);
       setSortOrder('desc');
     }
-  };
-
-  const handleExportCSV = () => {
-    const headers = ['Order ID', 'Date', 'Customer', 'Phone', 'Payment', 'Items', 'Subtotal', 'Discount', 'Total'];
-    const rows = filteredOrders.map(order => [
-      order.id,
-      new Date(order.date).toLocaleString('vi-VN'),
-      order.customerName || t('walkInCustomer'),
-      order.customerPhone || '',
-      order.paymentMethod,
-      Array.isArray(order.items) ? order.items.length : Object.keys(order.items || {}).length,
-      order.subtotal,
-      order.discount,
-      order.total
-    ]);
-    
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
   };
 
   const formatDate = (dateString: string) => {
@@ -939,8 +908,6 @@ export function OrderHistory() {
           {paymentOrder && (() => {
             const receivedAmount = getPaidAmount(paymentOrder);
             const remainingAmount = paymentOrder.total - receivedAmount;
-            const change = customerAmount ? parseFloat(customerAmount) - remainingAmount : 0;
-            
             const handleCompletePayment = () => {
               const additionalAmount = parseFloat(customerAmount || '0');
               const newReceivedAmount = receivedAmount + additionalAmount;
