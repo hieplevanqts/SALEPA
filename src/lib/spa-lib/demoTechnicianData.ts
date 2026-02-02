@@ -1,4 +1,4 @@
-import type { User, Customer, Appointment } from './store';
+import type { User, Customer } from './store';
 
 // Helper function to get date offset
 const getDateOffset = (daysOffset: number): string => {
@@ -164,7 +164,6 @@ export function injectDemoTechnicianData(store: any) {
     
     // Create demo appointments
     const demoAppointments: any[] = [];
-    let appointmentCounter = 1;
     
     // TODAY'S APPOINTMENTS (6 appointments with different time slots)
     const today = getToday();

@@ -1,4 +1,5 @@
 import { useStore } from '../../../../lib/spa-lib/store';
+import type { Order } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { ShoppingBag, TrendingUp, Package, DollarSign, AlertTriangle, Clock, Calendar, X } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -12,7 +13,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ userRole = 'admin' }: DashboardProps) {
-  const { orders: ordersRaw, products, currentShift: currentShiftRaw } = useStore();
+  const { orders: ordersRaw, products } = useStore();
   const { t } = useTranslation();
 
   // Time filter state
@@ -24,7 +25,9 @@ export function Dashboard({ userRole = 'admin' }: DashboardProps) {
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('7days');
 
   // Normalize orders to array (handle persisted object format)
-  const ordersArray = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
+  const ordersArray: Order[] = Array.isArray(ordersRaw)
+    ? ordersRaw
+    : (Object.values(ordersRaw || {}) as Order[]);
   
   // Filter out invalid orders and ensure all properties are primitives
   const orders = ordersArray.filter((order) => {
@@ -36,15 +39,6 @@ export function Dashboard({ userRole = 'admin' }: DashboardProps) {
       order.date
     );
   });
-
-  // Safely extract currentShift properties
-  const currentShift = currentShiftRaw ? {
-    openedBy: String(currentShiftRaw.openedBy || ''),
-    startTime: currentShiftRaw.startTime || new Date().toISOString(),
-    openingCash: Number(currentShiftRaw.openingCash || 0),
-    revenue: Number(currentShiftRaw.revenue || 0),
-    orderCount: Number(currentShiftRaw.orderCount || 0),
-  } : null;
 
   // Filter orders based on time filter
   const getFilteredOrders = () => {
@@ -241,7 +235,9 @@ export function Dashboard({ userRole = 'admin' }: DashboardProps) {
   // Category performance (based on filter)
   const categoryStats: Record<string, { revenue: number; quantity: number }> = {};
   filteredOrders.forEach((order) => {
-    const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+    const items = Array.isArray(order.items)
+      ? order.items
+      : (Object.values(order.items || {}) as Order['items']);
     items.forEach((item) => {
       // Validate item has valid primitive values
       if (!item || typeof item !== 'object' || !item.category || typeof item.category !== 'string') {
@@ -516,7 +512,7 @@ export function Dashboard({ userRole = 'admin' }: DashboardProps) {
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [`${(value * 1000).toLocaleString('vi-VN')} ${t('vnd')}`, t('total')]}
+                formatter={(value?: number) => [`${((value ?? 0) * 1000).toLocaleString('vi-VN')} ${t('vnd')}`, t('total')]}
               />
               <Line
                 type="monotone"
@@ -551,7 +547,7 @@ export function Dashboard({ userRole = 'admin' }: DashboardProps) {
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [`${(value * 1000).toLocaleString('vi-VN')} ${t('vnd')}`, t('total')]}
+                formatter={(value?: number) => [`${((value ?? 0) * 1000).toLocaleString('vi-VN')} ${t('vnd')}`, t('total')]}
               />
               <Bar dataKey="revenue" fill="#FE7410" radius={[8, 8, 0, 0]} />
             </BarChart>

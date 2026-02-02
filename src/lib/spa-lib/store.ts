@@ -43,11 +43,13 @@ export interface Product {
   description?: string;
   options?: ProductOption[];
   productType?: 'product' | 'service' | 'treatment'; // For Spa industry
+  type?: 'product' | 'service' | 'treatment'; // Legacy alias for productType
   duration?: number; // For services and treatments (in minutes)
   sessions?: number; // For treatments (number of sessions in package)
   sessionDetails?: TreatmentSessionDetail[]; // Chi tiết từng buổi cho liệu trình
   unit?: string; // Optional unit label (e.g., "chai", "hộp")
   lowStockThreshold?: number; // Optional low-stock threshold per product
+  status?: number; // Legacy status flag for product
 }
 
 export interface ProductOption {
@@ -115,7 +117,7 @@ export interface Order {
   note?: string;
   shiftId?: string;
   messages?: ChatMessage[];
-  status?: 'pending' | 'completed' | 'cancelled'; // Add status
+  status?: 'pending' | 'completed' | 'cancelled' | 'confirmed' | 'preparing' | 'ready' | 'served'; // Add status
   paidAt?: string; // When payment was collected
   receivedAmount?: number; // Amount received from customer
   changeAmount?: number; // Change returned to customer
@@ -166,8 +168,10 @@ export interface Customer {
   email?: string;
   address?: string;
   dateOfBirth?: string;
+  birthDate?: string; // Legacy alias
   gender?: 'male' | 'female' | 'other';
   customerGroupId?: string; // ID của nhóm khách hàng
+  customerGroup?: string; // Legacy alias
   notes?: string;
   taxCode?: string;
   avatar?: string;
@@ -199,6 +203,8 @@ export interface User {
   email?: string;                // Email
   phone?: string;                // Số điện thoại
   roleGroupId: string;           // ID nhóm quyền
+  role?: string;                 // Legacy role label
+  roleGroup?: string;            // Legacy role group name
   avatar?: string;               // URL ảnh đại diện
   isActive: boolean;             // Trạng thái hoạt động
   createdAt: string;             // Ngày tạo
@@ -283,6 +289,7 @@ export type CreateSelfServiceOrderInput = Omit<
 };
 
 export interface AppointmentService {
+  instanceId?: string;
   productId: string;
   productName: string;
   productType: 'product' | 'service' | 'treatment';
@@ -297,6 +304,8 @@ export interface AppointmentService {
   // NEW: Multiple technicians assigned to this specific service
   technicianIds?: string[]; // Array of technician IDs
   technicianNames?: string[]; // Array of technician names
+  // Legacy single-tech field
+  technicianId?: string;
   // ⭐ NEW: Time slot for each service
   startTime: string; // HH:mm format (e.g., "09:00")
   endTime: string;   // HH:mm format (e.g., "10:00")
@@ -312,9 +321,11 @@ export interface Appointment {
   customerName: string;
   customerPhone: string;
   appointmentDate: string; // ISO date (YYYY-MM-DD)
+  appointmentTime?: string; // Legacy time field
   startTime: string; // HH:mm format (e.g., "09:00")
   endTime: string; // HH:mm format - calculated from duration
   services: AppointmentService[];
+  totalDuration?: number;
   technicianId?: string; // DEPRECATED - now each service has its own technician
   technicianName?: string; // DEPRECATED - now each service has its own technician
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';

@@ -1444,6 +1444,8 @@ export const useStore = create<Store>()(
           ],
         },
       ],
+      stockInReceipts: [],
+      stockOutReceipts: [],
       categories: ['Đồ uống', 'Đồ ăn', 'Bánh kẹo', 'Món ăn nhanh', 'Món Hàn', 'Món Nhật', 'Món Thái'],
       productCategories: [
         {
@@ -3232,17 +3234,15 @@ export const useStore = create<Store>()(
         });
 
 
-        set((state) => ({
+        set({
           products: productsWithIds,
           categories: data.categories,
           productCategories: data.productCategories || [],
           selectedIndustry: industry,
           hasSelectedIndustry: true,
-
           tableAreas: initialTableArea,
-
           suppliers: demoSuppliers,
-        }));
+        });
 
         // Auto-load demo data based on industry
         if (industry === 'food-beverage') {
@@ -4089,7 +4089,7 @@ export const useStore = create<Store>()(
 
           // Second pass: Add missing codes
           let codeCounter = 1;
-          state.appointments = state.appointments.map((apt, index) => {
+          state.appointments = state.appointments.map((apt) => {
             if (!apt.code) {
               // Generate code for old appointments
               const code = `LH${String(codeCounter).padStart(6, '0')}`;

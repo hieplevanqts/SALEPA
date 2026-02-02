@@ -1,4 +1,4 @@
-import { DollarSign, Package, CheckCircle, XCircle, CreditCard, Printer, ChevronDown, Users, MessageSquare, X, Clock, Phone, Calendar, ShoppingBag, FileText, Edit, Trash2, ArrowLeft, Smartphone, QrCode, Zap, Check, Banknote } from 'lucide-react';
+import { DollarSign, CreditCard, Printer, Users, X, Clock, Phone, ShoppingBag, FileText, Edit, Trash2, ArrowLeft, Smartphone, QrCode, Zap, Check, Banknote } from 'lucide-react';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { useEffect, useState } from 'react';
 import { AppSidebar } from '../../components/shared/AppSidebar';
@@ -23,9 +23,6 @@ export function OrderDetailFullScreen({ order, onClose, onCollectPayment, onPrin
   const receivedAmount = order.receivedAmount || order.paidAmount || 0;
   const isUnderPaid = receivedAmount < order.total;
   
-  // Display amount: if paid more than total, show total; otherwise show actual amount
-  const displayReceivedAmount = receivedAmount > order.total ? order.total : receivedAmount;
-
   // Get current user info from localStorage
   const currentUser = localStorage.getItem('salepa_username') || '';
   const userRole = (localStorage.getItem('salepa_userRole') as 'admin' | 'cashier' | 'technician') || 'admin';
@@ -41,9 +38,6 @@ export function OrderDetailFullScreen({ order, onClose, onCollectPayment, onPrin
 
   // Calculate remaining amount to pay
   const remainingAmount = order.total - receivedAmount;
-
-  // Calculate change
-  const change = customerAmount ? parseFloat(customerAmount) - remainingAmount : 0;
 
   const paymentMethods = [
     { id: 'cash' as const, label: t('cash') || 'Tiền mặt', icon: Banknote },
@@ -68,6 +62,10 @@ export function OrderDetailFullScreen({ order, onClose, onCollectPayment, onPrin
   }, [showPaymentModal, receivedAmount, order.total, remainingAmount]);
 
   const handleCollectPayment = () => {
+    if (onCollectPayment) {
+      onCollectPayment(order);
+      return;
+    }
     setShowPaymentModal(true);
   };
 
@@ -467,7 +465,6 @@ export function OrderDetailFullScreen({ order, onClose, onCollectPayment, onPrin
                       {/* Reverse array to show newest first, then map with correct numbering */}
                       {[...order.paymentHistory].reverse().map((payment: any, index: number) => {
                         const isPositiveChange = payment.changeAmount && payment.changeAmount > 0;
-                        const isNegativeChange = payment.changeAmount && payment.changeAmount < 0;
                         // Generate payment code: TTddmmyy0001 (e.g., TT2001260001)
                         const paymentDate = new Date(payment.paidAt);
                         const day = paymentDate.getDate().toString().padStart(2, '0');

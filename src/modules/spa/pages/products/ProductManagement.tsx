@@ -36,8 +36,8 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterType, setFilterType] = useState<ProductType>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [sortField] = useState<SortField>('name');
+  const [sortOrder] = useState<SortOrder>('asc');
   const [syncing] = useState(false);
   
   // Delete confirmation states
