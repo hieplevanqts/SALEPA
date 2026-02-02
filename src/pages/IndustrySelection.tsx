@@ -4,15 +4,14 @@ import {
   Coffee, Sparkles, Shirt, ShoppingBag, Smartphone, Heart,
   Check, ArrowRight, ChevronRight
 } from 'lucide-react';
-import { useModuleCss } from '../utils/useModuleCss'
 import { useNavigate } from 'react-router-dom';
 import DebugPackageLoader from '../components/DebugPackageLoader';
 
 export type IndustryType = 'food-beverage' | 'spa-service' | 'fashion' | 'retail' | 'electronics' | 'pharmacy';
 
 interface IndustrySelectionProps {
-  onSelect: (industry: IndustryType) => void;
-  onSkip: () => void;
+  onSelect?: (industry: IndustryType) => void;
+  onSkip?: () => void;
 }
 const INDUSTRY_ROUTE_MAP: Record<IndustryType, string> = {
   'food-beverage': '/restaurant/',
@@ -81,6 +80,8 @@ export function IndustrySelection({ onSelect, onSkip }: IndustrySelectionProps) 
       console.warn('No route mapped for industry:', selectedIndustry);
     }
   };
+
+  const handleSkip = onSkip ?? (() => navigate("/"));
 
 
   return (
@@ -157,7 +158,7 @@ export function IndustrySelection({ onSelect, onSkip }: IndustrySelectionProps) 
         {/* Actions */}
         <div className="flex items-center justify-between pt-6 border-t border-gray-200">
           <button
-            onClick={onSkip}
+            onClick={handleSkip}
             className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors"
           >
             {/* {t('skipIndustry')} */}

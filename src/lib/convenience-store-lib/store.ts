@@ -189,8 +189,15 @@ export interface Customer {
   deleted_at?: string;
 
   // Legacy fields for backward compatibility
+  id?: string; // alias for _id
   name?: string; // alias for full_name
   debt?: number; // customer debt amount
+  customerGroup?: string;
+  notes?: string;
+  totalSpent?: number;
+  orderCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
   
   // Invoice information fields (both snake_case and camelCase for compatibility)
   company_name?: string;
@@ -296,11 +303,12 @@ export interface SelfServiceOrder extends Order {
 }
 
 export interface AppointmentService {
+  instanceId?: string;
   productId: string;
   productName: string;
-  productType: "product" | "service" | "treatment";
+  productType?: "product" | "service" | "treatment";
   duration: number; // in minutes
-  price: number;
+  price?: number;
   quantity?: number; // For products from treatment packages
   sessionNumber?: number; // For treatment packages
   maxSessions?: number; // Total sessions in treatment package
@@ -311,20 +319,22 @@ export interface AppointmentService {
   technicianId?: string;
   technicianName?: string;
   // ⭐ NEW: Time slot for each service
-  startTime: string; // HH:mm format (e.g., "09:00")
-  endTime: string; // HH:mm format (e.g., "10:00")
+  startTime?: string; // HH:mm format (e.g., "09:00")
+  endTime?: string; // HH:mm format (e.g., "10:00")
 }
 
 export interface Appointment {
   id: string;
-  code: string; // Appointment code (e.g., "LH000001")
+  code?: string; // Appointment code (e.g., "LH000001")
   customerId: string;
   customerName: string;
   customerPhone: string;
   appointmentDate: string; // ISO date (YYYY-MM-DD)
-  startTime: string; // HH:mm format (e.g., "09:00")
-  endTime: string; // HH:mm format - calculated from duration
+  startTime?: string; // HH:mm format (e.g., "09:00")
+  endTime?: string; // HH:mm format - calculated from duration
+  appointmentTime?: string; // Legacy field for HH:mm format
   services: AppointmentService[];
+  totalDuration?: number; // Legacy summary duration in minutes
   technicianId?: string; // DEPRECATED - now each service has its own technician
   technicianName?: string; // DEPRECATED - now each service has its own technician
   status: "pending" | "in-progress" | "completed" | "cancelled";

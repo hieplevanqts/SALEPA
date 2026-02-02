@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { ArrowRight, Check, ShoppingCart, BarChart3, Users, Package, Calendar, Zap } from 'lucide-react';
 import { useTranslation } from '../lib/convenience-store-lib/useTranslation';
 import logoImage from '../assets/5674d75012c6e5648856a4090ea134ccbacf662e.png';
-import { useModuleCss } from '../utils/useModuleCss'
 import { useNavigate } from 'react-router-dom';
-import DebugPackageLoader from '../components/DebugPackageLoader';
-import { Navigate } from 'react-router-dom';
 interface OnboardingScreenProps {
-  onComplete: () => void;
+  onComplete?: () => void;
 
 }
 
@@ -74,11 +71,8 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   };
 
   const handleSkip = () => {
-    if (onSkip) {
-      onSkip();
-    } else {
-      onComplete();
-    }
+    onSkip();
+    onComplete?.();
   };
 
   return (

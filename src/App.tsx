@@ -1,11 +1,10 @@
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import ConvenienceStoreModule from './modules/convenience-store/App';
 import FashionShopApp from './modules/fashion-shop/App';
 import SpaApp from './modules/spa/App';
 import OnboardingScreen from './pages/OnboardingScreen';
 import IndustrySelection from './pages/IndustrySelection';
-import DebugPackageLoader from './components/DebugPackageLoader';
 import RestaurantApp from './modules/restaurant/App';
 import { ConvenienceLayout, SpaLayout, RestaurantLayout, FashionShopLayout } from './components/ConvenienceLayout';
 

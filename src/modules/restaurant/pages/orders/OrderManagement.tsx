@@ -382,7 +382,7 @@ export function OrderManagement() {
                                     </span>
                                   </div>
                                   <p className={`text-sm ${hasUnreadMessages ? 'text-blue-900 font-medium' : 'text-gray-700'} line-clamp-2`}>
-                                    {order.messages[order.messages.length - 1].text}
+                                    {order.messages[order.messages.length - 1].message}
                                   </p>
                                 </div>
                                 {hasUnreadMessages && (
