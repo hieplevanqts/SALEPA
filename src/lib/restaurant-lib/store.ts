@@ -377,9 +377,11 @@ export interface Appointment {
   customerName: string;
   customerPhone: string;
   appointmentDate: string; // ISO date (YYYY-MM-DD)
+  appointmentTime?: string; // Legacy time field
   startTime: string; // HH:mm format (e.g., "09:00")
   endTime: string; // HH:mm format - calculated from duration
   services: AppointmentService[];
+  totalDuration?: number;
   technicianId?: string; // DEPRECATED - now each service has its own technician
   technicianName?: string; // DEPRECATED - now each service has its own technician
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';

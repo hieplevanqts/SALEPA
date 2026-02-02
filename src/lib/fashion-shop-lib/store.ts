@@ -2914,7 +2914,13 @@ export const useStore = create<Store>()(
         const { appointments } = get();
         // Generate appointment code (LH000001, LH000002, etc.)
         const maxCode = appointments.reduce((max, apt) => {
-          const codeNum = parseInt(apt.code.replace('LH', ''));
+          const codeValue = apt.code ?? '';
+          const codeNum = codeValue.startsWith('LH')
+            ? parseInt(codeValue.replace('LH', ''), 10)
+            : 0;
+          if (Number.isNaN(codeNum)) {
+            return max;
+          }
           return codeNum > max ? codeNum : max;
         }, 0);
         const code = `LH${String(maxCode + 1).padStart(6, '0')}`;
@@ -2985,7 +2991,7 @@ export const useStore = create<Store>()(
             get().createNotification({
               userId: techId,
               appointmentId,
-              appointmentCode: oldAppointment.code,
+              appointmentCode: oldAppointment.code ?? oldAppointment.id,
               title: 'Lịch hẹn cập nhật',
               message: `Lịch hẹn ${oldAppointment.code} - ${oldAppointment.customerName} đã được cập nhật`,
               type: 'updated_appointment',
@@ -3017,7 +3023,7 @@ export const useStore = create<Store>()(
             get().createNotification({
               userId: techId,
               appointmentId,
-              appointmentCode: appointment.code,
+              appointmentCode: appointment.code ?? appointment.id,
               title: 'Lịch hẹn đã hủy',
               message: `Lịch hẹn ${appointment.code} - ${appointment.customerName} đã bị hủy`,
               type: 'cancelled_appointment',
@@ -3054,6 +3060,7 @@ export const useStore = create<Store>()(
           );
           if (!hasTechnicianAssigned) return false;
           
+          if (!apt.startTime || !apt.endTime) return false;
           const [aptStartHour, aptStartMin] = apt.startTime.split(':').map(Number);
           const [aptEndHour, aptEndMin] = apt.endTime.split(':').map(Number);
           const aptStartMinutes = aptStartHour * 60 + aptStartMin;

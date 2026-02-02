@@ -1,4 +1,4 @@
-import type { Order, KitchenOrder } from './store';
+import type { Order, KitchenOrder, CartItem, KitchenOrderItem } from './store';
 
 // Helper function to create date with offset
 const getMinutesOffset = (minutesAgo: number): string => {
@@ -13,6 +13,23 @@ const getTimestampOffset = (minutesAgo: number): number => {
   return date.getTime();
 };
 
+type RawCartItem = Omit<CartItem, 'discount'> & Partial<Pick<CartItem, 'discount'>>;
+type RawKitchenOrderItem = Omit<KitchenOrderItem, 'discount'> &
+  Partial<Pick<KitchenOrderItem, 'discount'>>;
+
+type RawOrder = Omit<Order, 'items'> & { items: RawCartItem[] };
+type RawKitchenOrder = Omit<KitchenOrder, 'items'> & { items: RawKitchenOrderItem[] };
+
+const toCartItem = (item: RawCartItem): CartItem => ({
+  discount: 0,
+  ...item,
+});
+
+const toKitchenItem = (item: RawKitchenOrderItem): KitchenOrderItem => ({
+  discount: 0,
+  ...item,
+});
+
 // ==================== DEMO ORDERS ====================
 
 /**
@@ -22,7 +39,7 @@ const getTimestampOffset = (minutesAgo: number): number => {
  * - Bàn 7: Đơn chính + gọi thêm + hủy một phần
  */
 
-export const demoFBOrdersWithKitchen: Order[] = [
+const rawDemoFBOrdersWithKitchen: RawOrder[] = [
   // ========== BÀN 3 - Đơn Chính + Món Gọi Bổ Sung ==========
   {
     id: 'ORD-20260126-001',
@@ -239,9 +256,16 @@ export const demoFBOrdersWithKitchen: Order[] = [
   },
 ];
 
+export const demoFBOrdersWithKitchen: Order[] = rawDemoFBOrdersWithKitchen.map(
+  (order) => ({
+    ...order,
+    items: order.items.map(toCartItem),
+  }),
+);
+
 // ==================== DEMO KITCHEN ORDERS ====================
 
-export const demoKitchenOrders: KitchenOrder[] = [
+const rawDemoKitchenOrders: RawKitchenOrder[] = [
   // ========== BÀN 3 - KITCHEN ORDER 1: Đơn Chính ==========
   {
     id: 'KITCHEN-1737864000001',
@@ -515,6 +539,13 @@ export const demoKitchenOrders: KitchenOrder[] = [
     isAdditionalOrder: false,
   },
 ];
+
+export const demoKitchenOrders: KitchenOrder[] = rawDemoKitchenOrders.map(
+  (order) => ({
+    ...order,
+    items: order.items.map(toKitchenItem),
+  }),
+);
 
 // Function to load demo F&B data with Kitchen Orders
 export function loadDemoFBWithKitchen() {

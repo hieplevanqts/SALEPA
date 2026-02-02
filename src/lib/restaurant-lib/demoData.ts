@@ -22,6 +22,11 @@ const getMinutesOffset = (minutesAgo: number): string => {
 type RawCartItem = Omit<CartItem, 'discount' | 'category' | 'stock'> &
   Partial<Pick<CartItem, 'discount' | 'category' | 'stock'>>;
 
+type RawOrder = Omit<Order, 'items'> & {
+  items: RawCartItem[];
+  cart?: RawCartItem[];
+};
+
 const toCartItem = (item: RawCartItem): CartItem => ({
   discount: 0,
   category: 'Khác',
@@ -29,15 +34,16 @@ const toCartItem = (item: RawCartItem): CartItem => ({
   ...item,
 });
 
-const normalizeOrderItems = (
-  order: Omit<Order, 'items'> & { items: RawCartItem[] },
-): Order => ({
-  ...order,
-  items: order.items.map(toCartItem),
-});
+const normalizeOrderItems = (order: RawOrder): Order => {
+  const { cart: _cart, items, ...rest } = order;
+  return {
+    ...rest,
+    items: items.map(toCartItem),
+  };
+};
 
 // Demo F&B Orders for Kitchen View
-const rawDemoFBOrders = [
+const rawDemoFBOrders: RawOrder[] = [
   // Bàn 1 - Mới vào
   {
     id: 'FB001',
