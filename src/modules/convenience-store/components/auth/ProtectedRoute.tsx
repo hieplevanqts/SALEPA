@@ -1,10 +1,6 @@
 // components/auth/RequireRole.tsx
 import { Navigate, Outlet } from "react-router-dom";
 
-type UserRole = "admin" | "cashier" | "technician";
-
-
-
 interface RequireRoleProps {
   allow: string[];
 }

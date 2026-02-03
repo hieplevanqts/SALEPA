@@ -1,13 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Package, Plus, Search, Trash2, X, Printer, ChevronLeft, ChevronRight, ShoppingCart, Receipt, Eye, Edit, Calendar, ChevronDown } from 'lucide-react';
+import { Package, Plus, Search, Trash2, X, ChevronLeft, ChevronRight, Eye, Edit, Calendar, ChevronDown } from 'lucide-react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import type { StockInItem, StockInReceipt } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
 
 export function StockInManagement() {
-  const { t } = useTranslation();
-  const { products, stockInReceipts, suppliers, createStockInReceipt, updateStockInReceipt, deleteStockInReceipt, currentUser } = useStore();
+  const { products, stockInReceipts, suppliers, createStockInReceipt, updateStockInReceipt, deleteStockInReceipt } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<StockInReceipt | null>(null);
@@ -389,12 +387,6 @@ export function StockInManagement() {
     setShowForm(false);
     resetForm();
     setCurrentPage(1);
-  };
-  
-  const handleDelete = (receiptId: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa phiếu nhập này?')) {
-      deleteStockInReceipt(receiptId);
-    }
   };
   
   const handleDeleteConfirm = (receipt: StockInReceipt) => {

@@ -1,6 +1,5 @@
 import { X, Printer } from 'lucide-react';
 import { useStore } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import type { Order } from '../../../../lib/spa-lib/store';
 import logoSalepa from "../../../../assets/da526f2429ac0b8456776974a6480c4f4260145c.png";
 
@@ -11,7 +10,6 @@ interface PrintReceiptProps {
 
 export function PrintReceipt({ order, onClose }: PrintReceiptProps) {
   const { settings } = useStore();
-  const { t } = useTranslation();
 
   const handlePrint = () => {
     window.print();

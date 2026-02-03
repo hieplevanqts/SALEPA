@@ -758,11 +758,13 @@ export const translations = {
       organization: "Tổ chức",
       companyName: "Tên công ty",
       companyNamePlaceholder: "Nhập tên công ty",
+      companyAddress: "Địa chỉ công ty",
       buyerName: "Tên người mua",
       buyerNamePlaceholder: "Nhập tên người mua",
       invoiceAddress: "Địa chỉ xuất hóa đơn",
       invoiceAddressPlaceholder: "Nhập địa chỉ sau sát nhập",
       invoiceAddressTooltip: "Nhập địa chỉ sau sát nhập",
+      invoiceEmail: "Email xuất hóa đơn",
       province: "Tỉnh/Thành phố",
       selectProvince: "Chọn Tỉnh/Thành phố",
       district: "Quận/Huyện",
@@ -802,6 +804,7 @@ export const translations = {
       },
 
       // Customer Detail Tabs
+      summary: "Tổng quan",
       overview: "Overview",
       purchases: "Purchase History",
       treatments: "Treatments",
@@ -1230,8 +1233,6 @@ export const translations = {
     selectService: "Select Service",
     addSession: "Add Session",
     removeSession: "Remove Session",
-    inThe: "In the",
-
     // Currency
     vnd: "đ",
     items_count: "items",
@@ -1715,11 +1716,13 @@ export const translations = {
       organization: "Organization",
       companyName: "Company Name",
       companyNamePlaceholder: "Enter company name",
+      companyAddress: "Company Address",
       buyerName: "Buyer Name",
       buyerNamePlaceholder: "Enter buyer name",
       invoiceAddress: "Invoice Address",
       invoiceAddressPlaceholder: "Enter address for invoice",
       invoiceAddressTooltip: "Enter address for invoice",
+      invoiceEmail: "Invoice Email",
       province: "Province/City",
       selectProvince: "Select Province/City",
       district: "District/Ward",
@@ -1756,6 +1759,7 @@ export const translations = {
       },
 
       // Customer Detail Tabs
+      summary: "Summary",
       overview: "Overview",
       purchases: "Purchase History",
       treatments: "Treatments",

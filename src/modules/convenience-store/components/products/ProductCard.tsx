@@ -11,6 +11,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onQuickAdd, onViewDetails, isSelected }: ProductCardProps) {
   const { t } = useTranslation();
+  const stock = product.stock ?? product.quantity ?? 0;
+  const productId = product.id ?? product._id;
 
   return (
     <div
@@ -42,9 +44,9 @@ export function ProductCard({ product, onQuickAdd, onViewDetails, isSelected }: 
           <span className="text-sm font-bold text-blue-600">
             {product.price.toLocaleString()}đ
           </span>
-          {product.stock < 10 && (
+          {stock < 10 && (
             <span className="text-xs bg-orange-100 text-orange-600 px-1 py-0.5 rounded">
-              {product.stock}
+              {stock}
             </span>
           )}
         </div>
@@ -53,7 +55,7 @@ export function ProductCard({ product, onQuickAdd, onViewDetails, isSelected }: 
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onQuickAdd(product.id);
+            onQuickAdd(productId);
           }}
           className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-1.5 rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-1 text-xs font-medium"
         >

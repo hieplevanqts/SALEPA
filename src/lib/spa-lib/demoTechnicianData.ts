@@ -1,4 +1,4 @@
-import type { User, Customer, Appointment } from './store';
+import type { User, Customer } from './store';
 
 // Helper function to get date offset
 const getDateOffset = (daysOffset: number): string => {
@@ -20,6 +20,7 @@ export const demoTechnicians: Omit<User, 'id' | 'createdAt'>[] = [
     fullName: 'Nguyễn Thảo Linh',
     email: 'linh.nguyen@spa.com',
     phone: '0912345678',
+    roleGroupId: '3',
     role: 'technician',
     roleGroup: 'technician',
     isActive: true,
@@ -30,6 +31,7 @@ export const demoTechnicians: Omit<User, 'id' | 'createdAt'>[] = [
     fullName: 'Trần Hương Mai',
     email: 'mai.tran@spa.com',
     phone: '0923456789',
+    roleGroupId: '3',
     role: 'technician',
     roleGroup: 'technician',
     isActive: true,
@@ -40,6 +42,7 @@ export const demoTechnicians: Omit<User, 'id' | 'createdAt'>[] = [
     fullName: 'Lê Thanh Hoa',
     email: 'hoa.le@spa.com',
     phone: '0934567890',
+    roleGroupId: '3',
     role: 'technician',
     roleGroup: 'technician',
     isActive: true,
@@ -50,6 +53,7 @@ export const demoTechnicians: Omit<User, 'id' | 'createdAt'>[] = [
     fullName: 'Phạm Bích Lan',
     email: 'lan.pham@spa.com',
     phone: '0945678901',
+    roleGroupId: '3',
     role: 'technician',
     roleGroup: 'technician',
     isActive: true,
@@ -164,7 +168,6 @@ export function injectDemoTechnicianData(store: any) {
     
     // Create demo appointments
     const demoAppointments: any[] = [];
-    let appointmentCounter = 1;
     
     // TODAY'S APPOINTMENTS (6 appointments with different time slots)
     const today = getToday();

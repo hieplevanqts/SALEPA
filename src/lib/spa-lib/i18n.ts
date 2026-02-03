@@ -692,6 +692,7 @@ export const translations = {
       orderHistory: 'Lịch sử hóa đơn',
       noOrders: 'Chưa có hóa đơn nào',
       noCustomers: 'Chưa có khách hàng nào',
+      notFound: 'Không tìm thấy',
       addFirstCustomer: 'Thêm khách hàng đầu tiên của bạn',
       searchPlaceholder: 'Tìm kiếm theo tên, số điện thoại hoặc địa chỉ...',
       namePlaceholder: 'Nhập tên khách hàng',
@@ -703,6 +704,7 @@ export const translations = {
       sortByName: 'Sắp xếp A-Z',
       sortByRecent: 'Được thêm gần đây',
       sortBySpent: 'Chi tiêu cao nhất',
+      sortByDebt: 'Công nợ',
       viewDetail: 'Xem chi tiết',
       edit: 'Chỉnh sửa',
       delete: 'Xóa',
@@ -758,6 +760,7 @@ export const translations = {
       },
       
       // Customer Detail Tabs
+      summary: 'Tổng quan',
       overview: 'Overview',
       purchases: 'Purchase History',
       treatments: 'Treatments',
@@ -1539,6 +1542,7 @@ export const translations = {
       orderHistory: 'Order History',
       noOrders: 'No orders yet',
       noCustomers: 'No customers yet',
+      notFound: 'Not found',
       addFirstCustomer: 'Add your first customer',
       searchPlaceholder: 'Search by name, phone, or address...',
       namePlaceholder: 'Enter customer name',
@@ -1550,6 +1554,7 @@ export const translations = {
       sortByName: 'Sort A-Z',
       sortByRecent: 'Recently Added',
       sortBySpent: 'Highest Spending',
+      sortByDebt: 'Sort by debt',
       viewDetail: 'View Details',
       edit: 'Edit',
       delete: 'Delete',
@@ -1605,6 +1610,7 @@ export const translations = {
       },
       
       // Customer Detail Tabs
+      summary: 'Summary',
       overview: 'Overview',
       purchases: 'Purchase History',
       treatments: 'Treatments',

@@ -2,17 +2,16 @@ import { useState } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
-  Download, Upload, Trash2, RefreshCw, Save, Building, User, Bell, 
-  Palette, Database, Check, X, Zap, Shield, Moon, Sun, Globe,
-  Printer, CreditCard, Wifi, WifiOff, Server, HardDrive, Package,
-  ShoppingBag, Clock, Mail, Phone, MapPin, Settings2, Info,
-  ChevronRight, AlertTriangle, CheckCircle2, Eye, EyeOff, Smartphone,
+  Download, Upload, Trash2, Save, Building, Bell, 
+  Palette, Database, Zap, Moon, Sun,
+  Printer, CreditCard, HardDrive, Package,
+  ShoppingBag, Clock, Mail, Settings2, Info,
+  ChevronRight, AlertTriangle, CheckCircle2,
   Landmark, Wallet
 } from 'lucide-react';
 
 export function Settings() {
-  const { products, orders: ordersRaw, shifts, clearAllData, updateSettings } = useStore();
-  const get = useStore;
+  const { products, orders: ordersRaw, shifts, clearAllData } = useStore();
   const { t, language, setLanguage } = useTranslation();
   
   // Normalize orders to array (handle persisted object format)
@@ -43,7 +42,7 @@ export function Settings() {
   // Advanced settings
   const [autoPrint, setAutoPrint] = useState(false);
   const [autoOpenCashDrawer, setAutoOpenCashDrawer] = useState(true);
-  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineMode] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [receiptCopies, setReceiptCopies] = useState(1);
 

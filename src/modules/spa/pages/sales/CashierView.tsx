@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { 
-  DollarSign, Clock, History, LogOut, 
+  DollarSign, Clock, 
   User, ChevronLeft, ChevronRight, Receipt, Home
 } from 'lucide-react';
 import { CashierOrderHistory } from './CashierOrderHistory';

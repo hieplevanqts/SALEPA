@@ -3,8 +3,8 @@ import { useStore } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
   ShoppingBag, Clock, CheckCircle, XCircle, AlertCircle, 
-  Filter, Search, MapPin, User, MessageSquare, ChevronRight,
-  Utensils, PackageOpen, Phone, TrendingUp, Package, Eye
+  Filter, Search, MapPin, User, MessageSquare,
+  Phone, TrendingUp, Package, Eye
 } from 'lucide-react';
 import { OrderDetailFullScreen } from './OrderDetailFullScreen';
 import { MessageInbox } from '../messages/MessageInbox';
@@ -53,7 +53,7 @@ export function OrderManagement() {
   const stats = {
     total: selfServiceOrders.length,
     pending: selfServiceOrders.filter(o => o.status === 'pending').length,
-    completed: selfServiceOrders.filter(o => o.status === 'completed' || o.status === 'served').length,
+    completed: selfServiceOrders.filter(o => o.status === 'completed').length,
     cancelled: selfServiceOrders.filter(o => o.status === 'cancelled').length,
     totalRevenue: selfServiceOrders
       .filter(o => o.status !== 'cancelled')
@@ -71,7 +71,6 @@ export function OrderManagement() {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-700 border-yellow-300',
       completed: 'bg-green-100 text-green-700 border-green-300',
-      served: 'bg-green-100 text-green-700 border-green-300', // Map served to completed
       cancelled: 'bg-red-100 text-red-700 border-red-300',
     };
     return colors[status as keyof typeof colors] || colors.pending;
@@ -81,7 +80,6 @@ export function OrderManagement() {
     const texts = {
       pending: t('pending'),
       completed: t('completed'),
-      served: t('completed'), // Map served to completed for display
       cancelled: t('cancelled'),
     };
     return texts[status as keyof typeof texts] || status;
@@ -92,7 +90,6 @@ export function OrderManagement() {
       case 'pending':
         return <AlertCircle className="w-5 h-5" />;
       case 'completed':
-      case 'served':
         return <CheckCircle className="w-5 h-5" />;
       case 'cancelled':
         return <XCircle className="w-5 h-5" />;
@@ -382,7 +379,7 @@ export function OrderManagement() {
                                     </span>
                                   </div>
                                   <p className={`text-sm ${hasUnreadMessages ? 'text-blue-900 font-medium' : 'text-gray-700'} line-clamp-2`}>
-                                    {order.messages[order.messages.length - 1].text}
+                                    {order.messages[order.messages.length - 1].message}
                                   </p>
                                 </div>
                                 {hasUnreadMessages && (

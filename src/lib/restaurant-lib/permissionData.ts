@@ -226,25 +226,25 @@ export const systemPermissions: Permission[] = [
     id: 'view_reports',
     name: 'Xem báo cáo',
     description: 'Xem các báo cáo doanh thu, khách hàng',
-    category: 'report',
+    category: 'reports',
   },
   {
     id: 'export_reports',
     name: 'Xuất báo cáo',
     description: 'Xuất báo cáo ra Excel, PDF',
-    category: 'report',
+    category: 'reports',
   },
   {
     id: 'view_revenue_reports',
     name: 'Xem BC doanh thu',
     description: 'Xem báo cáo doanh thu chi tiết',
-    category: 'report',
+    category: 'reports',
   },
   {
     id: 'view_staff_performance',
     name: 'Xem BC nhân viên',
     description: 'Xem hiệu suất làm việc của nhân viên',
-    category: 'report',
+    category: 'reports',
   },
   
   // ===== NGƯỜI DÙNG & PHÂN QUYỀN =====

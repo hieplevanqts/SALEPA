@@ -43,9 +43,13 @@ export interface Product {
   description?: string;
   options?: ProductOption[];
   productType?: 'product' | 'service' | 'treatment'; // For Spa industry
+  type?: 'product' | 'service' | 'treatment'; // Legacy alias for productType
   duration?: number; // For services and treatments (in minutes)
   sessions?: number; // For treatments (number of sessions in package)
   sessionDetails?: TreatmentSessionDetail[]; // Chi tiết từng buổi cho liệu trình
+  unit?: string; // Optional unit label (e.g., "chai", "hộp")
+  lowStockThreshold?: number; // Optional low-stock threshold per product
+  status?: number; // Legacy status flag for product
 }
 
 export interface ProductOption {
@@ -113,7 +117,7 @@ export interface Order {
   note?: string;
   shiftId?: string;
   messages?: ChatMessage[];
-  status?: 'pending' | 'completed' | 'cancelled'; // Add status
+  status?: 'pending' | 'completed' | 'cancelled' | 'confirmed' | 'preparing' | 'ready' | 'served'; // Add status
   paidAt?: string; // When payment was collected
   receivedAmount?: number; // Amount received from customer
   changeAmount?: number; // Change returned to customer
@@ -121,6 +125,15 @@ export interface Order {
   createdBy?: string; // Người tạo hóa đơn
   invoiceStatus?: 'not_issued' | 'issued' | 'error'; // Trạng thái HĐDT: Chưa phát hành, Đã phát hành, Phát hành lỗi
 }
+
+export type CreateOrderInput = Omit<
+  Order,
+  'id' | 'items' | 'subtotal' | 'total' | 'date' | 'timestamp' | 'discount'
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
 
 export interface Shift {
   id: string;
@@ -155,8 +168,10 @@ export interface Customer {
   email?: string;
   address?: string;
   dateOfBirth?: string;
+  birthDate?: string; // Legacy alias
   gender?: 'male' | 'female' | 'other';
   customerGroupId?: string; // ID của nhóm khách hàng
+  customerGroup?: string; // Legacy alias
   notes?: string;
   taxCode?: string;
   avatar?: string;
@@ -188,6 +203,8 @@ export interface User {
   email?: string;                // Email
   phone?: string;                // Số điện thoại
   roleGroupId: string;           // ID nhóm quyền
+  role?: string;                 // Legacy role label
+  roleGroup?: string;            // Legacy role group name
   avatar?: string;               // URL ảnh đại diện
   isActive: boolean;             // Trạng thái hoạt động
   createdAt: string;             // Ngày tạo
@@ -228,6 +245,10 @@ export interface Settings {
   currencySymbol: string;
   receiptFooter: string;
   lowStockThreshold: number;
+  businessName?: string;
+  businessAddress?: string;
+  businessPhone?: string;
+  businessWebsite?: string;
   // Bank transfer settings
   bankName?: string;
   bankAccountNumber?: string;
@@ -262,7 +283,17 @@ export interface SelfServiceOrder extends Order {
   orderType: 'dine-in' | 'takeaway';
 }
 
+export type CreateSelfServiceOrderInput = Omit<
+  SelfServiceOrder,
+  'id' | 'items' | 'subtotal' | 'total' | 'date' | 'timestamp' | 'discount'
+> & {
+  date?: string;
+  timestamp?: string;
+  discount?: number;
+};
+
 export interface AppointmentService {
+  instanceId?: string;
   productId: string;
   productName: string;
   productType: 'product' | 'service' | 'treatment';
@@ -277,6 +308,8 @@ export interface AppointmentService {
   // NEW: Multiple technicians assigned to this specific service
   technicianIds?: string[]; // Array of technician IDs
   technicianNames?: string[]; // Array of technician names
+  // Legacy single-tech field
+  technicianId?: string;
   // ⭐ NEW: Time slot for each service
   startTime: string; // HH:mm format (e.g., "09:00")
   endTime: string;   // HH:mm format (e.g., "10:00")
@@ -292,9 +325,11 @@ export interface Appointment {
   customerName: string;
   customerPhone: string;
   appointmentDate: string; // ISO date (YYYY-MM-DD)
+  appointmentTime?: string; // Legacy time field
   startTime: string; // HH:mm format (e.g., "09:00")
   endTime: string; // HH:mm format - calculated from duration
   services: AppointmentService[];
+  totalDuration?: number;
   technicianId?: string; // DEPRECATED - now each service has its own technician
   technicianName?: string; // DEPRECATED - now each service has its own technician
   status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
@@ -507,7 +542,7 @@ interface Store {
   clearCart: () => void;
   
   // Order actions
-  createOrder: (orderData: Omit<Order, 'id' | 'items' | 'subtotal' | 'total' | 'date'>) => Order;
+  createOrder: (orderData: CreateOrderInput) => Order;
   updateOrder: (orderId: string, updates: Partial<Order>) => void;
   deleteOrder: (orderId: string) => void;
   setEditingOrder: (order: Order | null) => void;
@@ -564,7 +599,7 @@ interface Store {
   
   // Self-service actions
   setCurrentTable: (table: Table | null) => void;
-  createSelfServiceOrder: (orderData: Omit<SelfServiceOrder, 'id' | 'date' | 'items' | 'subtotal' | 'total'>) => void;
+  createSelfServiceOrder: (orderData: CreateSelfServiceOrderInput) => void;
   updateOrderStatus: (orderId: string, status: SelfServiceOrder['status']) => void;
   addMessageToOrder: (orderId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   
@@ -592,7 +627,7 @@ interface Store {
   logout: () => void;
   
   // Appointment actions
-  createAppointment: (appointmentData: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  createAppointment: (appointmentData: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt' | 'code'>) => void;
   updateAppointment: (appointmentId: string, updates: Partial<Appointment>) => void;
   deleteAppointment: (appointmentId: string) => void;
   updateAppointmentStatus: (appointmentId: string, status: Appointment['status']) => void;
@@ -1587,6 +1622,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '',
@@ -1613,6 +1650,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 350000,
+              startTime: '11:00',
+              endTime: '12:00',
             },
           ],
           technicianId: '3',
@@ -1640,6 +1679,8 @@ export const useStore = create<Store>()(
               price: 2500000,
               sessionNumber: 1,
               maxSessions: 10,
+              startTime: '14:00',
+              endTime: '15:30',
             },
           ],
           technicianId: '3',
@@ -1666,6 +1707,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '10:00',
+              endTime: '11:30',
             },
           ],
           technicianId: '3',
@@ -1691,6 +1734,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 350000,
+              startTime: '15:00',
+              endTime: '16:00',
             },
           ],
           technicianId: '3',
@@ -1716,6 +1761,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:30',
+              endTime: '11:00',
             },
           ],
           technicianId: '',
@@ -1742,6 +1789,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 30,
               price: 350000,
+              startTime: '14:00',
+              endTime: '14:30',
             },
           ],
           technicianId: '3',
@@ -1770,6 +1819,8 @@ export const useStore = create<Store>()(
               price: 2500000,
               sessionNumber: 2,
               maxSessions: 10,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '3',
@@ -1795,6 +1846,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 60,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:00',
             },
           ],
           technicianId: '',
@@ -1820,6 +1873,8 @@ export const useStore = create<Store>()(
               productType: 'service',
               duration: 90,
               price: 200000,
+              startTime: '09:00',
+              endTime: '10:30',
             },
           ],
           technicianId: '',
@@ -1932,6 +1987,8 @@ export const useStore = create<Store>()(
       roleGroups: defaultRoleGroups,
       userPermissionOverrides: [],
       customerTreatmentPackages: [],
+      stockInReceipts: [],
+      stockOutReceipts: [],
       technicianNotifications: [],
       editingOrder: null,
       
@@ -2011,6 +2068,12 @@ export const useStore = create<Store>()(
       },
       
       createOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          timestamp: orderTimestamp,
+          date: orderDate,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift, currentUser, orders } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -2019,7 +2082,7 @@ export const useStore = create<Store>()(
         const totalDiscount = cart.reduce(
           (sum, item) => sum + (item.discount * item.quantity),
           0
-        ) + (orderData.discount || 0);
+        ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
         
         // Get current user info from localStorage
@@ -2042,12 +2105,12 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
           status: 'pending',
           createdBy: currentUser?.fullName || currentUsername,
-          ...orderData,
+          ...restOrderData,
           paymentHistory: initialPaymentHistory, // Always ensure paymentHistory exists
         };
         
@@ -2178,7 +2241,7 @@ export const useStore = create<Store>()(
                     const newPackage: CustomerTreatmentPackage = {
                       id: packageId,
                       customerId: customerId,
-                      customerName: orderData.customerName,
+                      customerName: orderData.customerName || '',
                       treatmentProductId: item.id,
                       treatmentName: item.name,
                       totalSessions: fullProduct.sessions,
@@ -2537,6 +2600,12 @@ export const useStore = create<Store>()(
       },
       
       createSelfServiceOrder: (orderData) => {
+        const {
+          discount: orderLevelDiscount = 0,
+          timestamp: orderTimestamp,
+          date: orderDate,
+          ...restOrderData
+        } = orderData;
         const { cart, currentShift, selfServiceOrders } = get();
         const subtotal = cart.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -2545,7 +2614,7 @@ export const useStore = create<Store>()(
         const totalDiscount = cart.reduce(
           (sum, item) => sum + (item.discount * item.quantity),
           0
-        ) + (orderData.discount || 0);
+        ) + orderLevelDiscount;
         const total = subtotal - totalDiscount;
         
         const order: SelfServiceOrder = {
@@ -2554,10 +2623,10 @@ export const useStore = create<Store>()(
           subtotal,
           discount: totalDiscount,
           total,
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
+          date: orderDate || new Date().toISOString(),
+          timestamp: orderTimestamp || new Date().toISOString(),
           shiftId: currentShift?.id,
-          ...orderData,
+          ...restOrderData,
         };
         
         set((state) => ({
@@ -3184,7 +3253,7 @@ export const useStore = create<Store>()(
       },
       
       updateStockOutReceipt: (receiptId, receiptData) => {
-        const { stockOutReceipts, products, currentUser } = get();
+        const { stockOutReceipts, products } = get();
         const oldReceipt = (stockOutReceipts || []).find(r => r.id === receiptId);
         
         if (oldReceipt) {
@@ -3417,7 +3486,12 @@ export const useStore = create<Store>()(
         
         // Find package that includes this service
         for (const pkg of activePackages) {
-          if (pkg.serviceIds.includes(serviceId)) {
+          const hasService = pkg.sessions.some((session) =>
+            session.items.some(
+              (item) => item.productType === 'service' && item.productId === serviceId,
+            ),
+          );
+          if (hasService) {
             return pkg;
           }
         }
@@ -3720,7 +3794,7 @@ export const useStore = create<Store>()(
           
           // Second pass: Add missing codes
           let codeCounter = 1;
-          state.appointments = state.appointments.map((apt, index) => {
+          state.appointments = state.appointments.map((apt) => {
             if (!apt.code) {
               // Generate code for old appointments
               const code = `LH${String(codeCounter).padStart(6, '0')}`;

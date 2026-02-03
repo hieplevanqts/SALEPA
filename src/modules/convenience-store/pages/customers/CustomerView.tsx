@@ -5,7 +5,7 @@ import {
   ShoppingBag, Plus, Minus, Trash2, Check, X, 
   ChevronRight, MapPin, User, Phone, MessageSquare, Coffee,
   Utensils, PackageOpen, Sparkles, Clock, Star, ArrowLeft,
-  Receipt, Package, History
+  Receipt
 } from 'lucide-react';
 
 // Simulate QR code scanning
@@ -20,7 +20,6 @@ export function CustomerView() {
     updateCartQuantity,
     createSelfServiceOrder,
     categories,
-    clearCart,
     language,
     setLanguage,
     selfServiceOrders
@@ -36,7 +35,6 @@ export function CustomerView() {
   const [showCart, setShowCart] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [currentTable, setCurrentTable] = useState<any>(null);
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
 
   // Demo tables
   const demoTables = [
@@ -66,8 +64,9 @@ export function CustomerView() {
   // Filter products - Only show ACTIVE products (status = 1)
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    const stock = product.stock ?? product.quantity ?? 0;
     const isActive = product.status === 1; // Only active products
-    return matchesCategory && product.stock > 0 && isActive;
+    return matchesCategory && stock > 0 && isActive;
   });
 
   // Get orders for current table
@@ -75,7 +74,7 @@ export function CustomerView() {
 
   // Handle add to cart
   const handleAddProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
+    const product = products.find(p => (p.id ?? p._id) === productId);
     if (product) {
       addToCart(product);
       setSelectedProduct(productId);
@@ -94,9 +93,6 @@ export function CustomerView() {
 
   // Handle confirm order
   const handleConfirmOrder = () => {
-    const orderId = Date.now().toString();
-    setLastOrderId(orderId);
-    
     createSelfServiceOrder({
       tableId: currentTable?.id,
       tableName: currentTable?.name,
@@ -132,7 +128,7 @@ export function CustomerView() {
   };
 
   // Get product emoji
-  const getProductEmoji = (category: string) => {
+  const getProductEmoji = (category?: string) => {
     const emojiMap: { [key: string]: string } = {
       'Đồ uống': '🥤',
       'Đồ ăn': '🍜',
@@ -142,6 +138,9 @@ export function CustomerView() {
       'Món Nhật': '🍣',
       'Món Thái': '🍛',
     };
+    if (!category) {
+      return '🍽️';
+    }
     return emojiMap[category] || '🍽️';
   };
 
@@ -179,8 +178,6 @@ export function CustomerView() {
 
   // View Order Screen
   if (step === 'view-order') {
-    const latestOrder = tableOrders[0];
-    
     return (
       <div className="h-screen flex flex-col bg-gray-50">
         {/* Header */}
@@ -561,11 +558,14 @@ export function CustomerView() {
         {/* Products Grid */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-24">
-            {filteredProducts.map((product) => (
+            {filteredProducts.map((product) => {
+              const productId = product.id ?? product._id;
+              const stock = product.stock ?? product.quantity ?? 0;
+              return (
               <div
-                key={product.id}
+                key={productId}
                 className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden ${
-                  selectedProduct === product.id ? 'ring-4 ring-blue-500 scale-95' : ''
+                  selectedProduct === productId ? 'ring-4 ring-blue-500 scale-95' : ''
                 }`}
               >
                 <div className="aspect-square bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
@@ -582,15 +582,15 @@ export function CustomerView() {
                     <span className="text-xl font-bold text-blue-600">
                       {product.price.toLocaleString()}đ
                     </span>
-                    {product.stock < 10 && (
+                  {stock < 10 && (
                       <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
-                        {product.stock} {t('left') || 'left'}
+                      {stock} {t('left') || 'left'}
                       </span>
                     )}
                   </div>
 
                   <button
-                    onClick={() => handleAddProduct(product.id)}
+                    onClick={() => handleAddProduct(productId)}
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2 font-medium active:scale-95"
                   >
                     <Plus className="w-5 h-5" />
@@ -598,7 +598,8 @@ export function CustomerView() {
                   </button>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
 
@@ -641,8 +642,10 @@ export function CustomerView() {
                     <p>{t('emptyCart')}</p>
                   </div>
                 ) : (
-                  cart.map((item) => (
-                    <div key={item.id} className="bg-gray-50 rounded-xl p-3 border border-gray-200">
+                  cart.map((item) => {
+                    const itemId = item.id ?? item._id;
+                    return (
+                    <div key={itemId} className="bg-gray-50 rounded-xl p-3 border border-gray-200">
                       <div className="flex items-start gap-3 mb-2">
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 text-3xl">
                           {getProductEmoji(item.category)}
@@ -654,7 +657,7 @@ export function CustomerView() {
                           </div>
                         </div>
                         <button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(itemId)}
                           className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -663,7 +666,7 @@ export function CustomerView() {
 
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
+                          onClick={() => updateCartQuantity(itemId, item.quantity - 1)}
                           className="w-10 h-10 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center hover:border-blue-500 active:scale-95"
                         >
                           <Minus className="w-4 h-4" />
@@ -672,7 +675,7 @@ export function CustomerView() {
                           <span className="font-bold text-lg">{item.quantity}</span>
                         </div>
                         <button
-                          onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                          onClick={() => updateCartQuantity(itemId, item.quantity + 1)}
                           className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center active:scale-95"
                         >
                           <Plus className="w-4 h-4 text-white" />
@@ -685,7 +688,8 @@ export function CustomerView() {
                         </div>
                       </div>
                     </div>
-                  ))
+                  );
+                  })
                 )}
               </div>
 
@@ -764,8 +768,10 @@ export function CustomerView() {
               {/* Order Summary */}
               <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                 <h3 className="font-bold text-gray-900 mb-3">{t('orderSummary') || 'Order Summary'}</h3>
-                {cart.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-sm py-2 border-b border-gray-200 last:border-0">
+                {cart.map((item) => {
+                  const itemId = item.id ?? item._id;
+                  return (
+                  <div key={itemId} className="flex items-center justify-between text-sm py-2 border-b border-gray-200 last:border-0">
                     <div className="flex items-center gap-2">
                       <span className="text-2xl">{getProductEmoji(item.category)}</span>
                       <div>
@@ -777,7 +783,8 @@ export function CustomerView() {
                       {(item.price * item.quantity).toLocaleString()}đ
                     </span>
                   </div>
-                ))}
+                );
+                })}
                 <div className="border-t-2 border-gray-300 pt-3 mt-3 flex justify-between">
                   <span className="text-lg font-bold text-gray-900">{t('total')}</span>
                   <span className="text-2xl font-bold text-blue-600">

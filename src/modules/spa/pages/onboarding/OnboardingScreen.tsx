@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Check, ShoppingCart, BarChart3, Users, Package, Calendar, Zap } from 'lucide-react';
+import { ArrowRight, Check, ShoppingCart, BarChart3, Users, Package, Zap } from 'lucide-react';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import logoImage from '../../../../assets/5674d75012c6e5648856a4090ea134ccbacf662e.png';
 

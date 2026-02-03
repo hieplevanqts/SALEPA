@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
+import type { CartItem } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { 
-  QrCode, ShoppingBag, Plus, Minus, Trash2, Check, X, 
+  QrCode, ShoppingBag, Check, X, 
   ChevronRight, MapPin, User, Phone, MessageSquare, Coffee,
   Utensils, PackageOpen, Sparkles, Clock, Star, Languages, ClipboardList
 } from 'lucide-react';
@@ -24,7 +25,6 @@ export function SelfServiceScreen() {
     categories,
     currentTable,
     setCurrentTable,
-    clearCart,
     language,
     setLanguage,
     selfServiceOrders,
@@ -93,7 +93,7 @@ export function SelfServiceScreen() {
     const product = products.find(p => p.id === productId);
     if (product) {
       // Always add directly with default options
-      const productToAdd = { ...product };
+      const productToAdd = { ...product } as CartItem;
       
       // If product has required options, use first choice as default
       if (product.options && product.options.length > 0) {
@@ -357,7 +357,7 @@ export function SelfServiceScreen() {
               <div>
                 <h1 className="text-2xl font-bold">{t('selfService')}</h1>
                 <p className="text-sm text-blue-100">
-                  {currentTable?.name} • {currentTable?.type === 'dine-in' ? t('dineIn') : t('takeaway')}
+                  {currentTable?.name}
                 </p>
               </div>
             </div>

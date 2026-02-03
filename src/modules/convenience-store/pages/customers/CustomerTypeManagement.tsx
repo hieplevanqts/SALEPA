@@ -18,7 +18,12 @@ export function CustomerTypeManagement() {
   const [itemsPerPage, setItemsPerPage] = useState(20);
   
   // Form states
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    code: string;
+    name: string;
+    min_spent: number;
+    status: 0 | 1;
+  }>({
     code: '',
     name: '',
     min_spent: 0,
@@ -193,11 +198,14 @@ export function CustomerTypeManagement() {
       return;
     }
 
+    const priority =
+      editingType?.priority ?? formData.min_spent;
     const customerTypeData = {
       code: formData.code.trim().toUpperCase(),
       name: formData.name.trim(),
       min_spent: formData.min_spent,
       status: formData.status,
+      priority,
     };
 
     if (editingType) {
@@ -384,7 +392,7 @@ export function CustomerTypeManagement() {
 
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
-            {paginatedTypes.map((type, index) => (
+            {paginatedTypes.map((type) => (
               <div
                 key={type._id}
                 className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"

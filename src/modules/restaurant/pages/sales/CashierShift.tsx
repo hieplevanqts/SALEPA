@@ -3,7 +3,7 @@ import { useStore } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
   Clock, DollarSign, TrendingUp, Package, 
-  PlayCircle, StopCircle, AlertCircle, CheckCircle 
+  PlayCircle, StopCircle, AlertCircle
 } from 'lucide-react';
 
 export function CashierShift() {
@@ -24,7 +24,7 @@ export function CashierShift() {
     const shiftOrders = JSON.parse(localStorage.getItem('pos-orders') || '[]')
       .filter((o: any) => {
         const orderTime = new Date(o.timestamp).getTime();
-        const shiftStart = new Date(currentShift.startTime).getTime();
+        const shiftStart = new Date(currentShift.openTime).getTime();
         return orderTime >= shiftStart;
       });
 
@@ -33,7 +33,7 @@ export function CashierShift() {
     const items = shiftOrders.reduce((sum: number, o: any) => 
       sum + o.items.reduce((s: number, i: any) => s + i.quantity, 0), 0);
 
-    const duration = Math.floor((Date.now() - new Date(currentShift.startTime).getTime()) / 60000);
+    const duration = Math.floor((Date.now() - new Date(currentShift.openTime).getTime()) / 60000);
     const hours = Math.floor(duration / 60);
     const minutes = duration % 60;
 
@@ -61,7 +61,7 @@ export function CashierShift() {
       return;
     }
 
-    closeShift(currentShift.id, cash, shiftNote);
+    closeShift(cash, 'Cashier', shiftNote);
     setShowCloseModal(false);
     setClosingCash('');
     setShiftNote('');
@@ -174,11 +174,11 @@ export function CashierShift() {
             <div className="space-y-3">
               {closedShifts.map((shift) => {
                 const duration = Math.floor(
-                  (new Date(shift.endTime!).getTime() - new Date(shift.startTime).getTime()) / 60000
+                  (new Date(shift.closeTime || shift.openTime).getTime() - new Date(shift.openTime).getTime()) / 60000
                 );
                 const hours = Math.floor(duration / 60);
                 const minutes = duration % 60;
-                const difference = (shift.closingCash || 0) - shift.expectedCash;
+                const difference = (shift.closingCash || 0) - (shift.expectedCash ?? 0);
 
                 return (
                   <div
@@ -188,13 +188,13 @@ export function CashierShift() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <p className="font-semibold text-gray-900">
-                          {new Date(shift.startTime).toLocaleDateString('vi-VN')}
+                          {new Date(shift.openTime).toLocaleDateString('vi-VN')}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {new Date(shift.startTime).toLocaleTimeString('vi-VN', {
+                          {new Date(shift.openTime).toLocaleTimeString('vi-VN', {
                             hour: '2-digit',
                             minute: '2-digit',
-                          })} - {new Date(shift.endTime!).toLocaleTimeString('vi-VN', {
+                          })} - {new Date(shift.closeTime || shift.openTime).toLocaleTimeString('vi-VN', {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
@@ -206,10 +206,10 @@ export function CashierShift() {
 
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-600">
-                          {shift.revenue.toLocaleString()}đ
+                          {shift.totalRevenue.toLocaleString()}đ
                         </p>
                         <p className="text-sm text-gray-500">
-                          {shift.orders} {t.orders}
+                          {shift.totalOrders} {t.orders}
                         </p>
                       </div>
                     </div>

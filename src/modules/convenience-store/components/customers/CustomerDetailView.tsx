@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { User, Phone, Mail, MapPin, Calendar, Edit, Trash2, Cake, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, ArrowLeft, Package, Scissors, TrendingUp, Printer, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Edit, Trash2, AlertCircle, ShoppingBag, Clock, CreditCard, ArrowLeft } from 'lucide-react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import type { Customer, Order } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
@@ -16,113 +16,30 @@ interface CustomerDetailViewProps {
 
 type TabType = 'overview' | 'purchases';
 
-export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onViewOrder }: CustomerDetailViewProps) {
+export function CustomerDetailView({ customer, onClose, onEdit, onDelete }: CustomerDetailViewProps) {
   const { t } = useTranslation();
-  const { orders, products, deleteOrder, customerTreatmentPackages, getCustomerActivePackages, customerTypes } = useStore();
+  const { orders, deleteOrder, customerTypes } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending' | 'cancelled'>('all');
+  const [filterStatus] = useState<'all' | 'completed' | 'pending' | 'cancelled'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
-  const [expandedPackages, setExpandedPackages] = useState<string[]>([]);
-
-  // Toggle package expansion
-  const togglePackageExpansion = (packageId: string) => {
-    setExpandedPackages(prev => 
-      prev.includes(packageId) 
-        ? prev.filter(id => id !== packageId)
-        : [...prev, packageId]
-    );
-  };
+  const customerPhone = customer.phone ?? '';
 
   // Get customer orders
   const customerOrders = useMemo(() => {
-    const ordersArray = Array.isArray(orders) ? orders : Object.values(orders || {});
-    let result = ordersArray.filter((order) => 
-      order && order.customerPhone === customer.phone
-    );
-    
+    let result = orders.filter((order) => order.customerPhone === customerPhone);
+
     if (filterStatus !== 'all') {
       result = result.filter((order) => order.status === filterStatus);
     }
-    
-    return result.sort((a, b) => new Date(b.timestamp || b.date || '').getTime() - new Date(a.timestamp || a.date || '').getTime());
-  }, [orders, customer.phone, filterStatus]);
 
-  // Get customer treatment packages from store
-  const customerTreatmentPackagesData = useMemo(() => {
-    return customerTreatmentPackages
-      .filter(pkg => pkg.customerId === customer._id)
-      .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
-  }, [customerTreatmentPackages, customer._id]);
-
-  // Extract services from orders
-  const customerServices = useMemo(() => {
-    const services: any[] = [];
-    customerOrders.forEach((order) => {
-      const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
-      items.forEach((item: any) => {
-        if (item && (item.type === 'service' || item.productType === 'service')) {
-          services.push({
-            id: `${order.id}-${item.name}`,
-            name: item.name,
-            serviceDate: order.timestamp || order.date,
-            duration: item.duration || 0,
-            price: item.price,
-            orderId: order.id,
-          });
-        }
-      });
-    });
-    return services;
-  }, [customerOrders]);
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const totalOrders = customer.total_orders; // Use DB value
-    const totalSpent = customer.total_spent; // Use DB value
-    const totalPaid = customerOrders.reduce((sum, order) => {
-      const received = order.receivedAmount || order.paidAmount || 0;
-      // Cap received amount at order total for calculation
-      const cappedReceived = received > order.total ? order.total : received;
-      return sum + cappedReceived;
-    }, 0);
-    const debt = totalSpent - totalPaid;
-    const avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-    const lastVisit = customer.last_purchase_at || customer.created_at;
-    
-    // Get unpaid orders
-    const unpaidOrders = customerOrders.filter(order => {
-      const received = order.receivedAmount || order.paidAmount || 0;
-      const cappedReceived = received > order.total ? order.total : received;
-      return cappedReceived < order.total;
-    });
-    
-    return {
-      totalOrders,
-      totalSpent,
-      totalPaid,
-      debt,
-      avgOrderValue,
-      lastVisit,
-      unpaidOrders,
-    };
-  }, [customerOrders, customer.total_orders, customer.total_spent, customer.last_purchase_at, customer.created_at]);
-
-  const getCustomerGroupBadge = (group?: string) => {
-    const badges = {
-      vip: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'VIP' },
-      acquaintance: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Bạn bè' },
-      employee: { bg: 'bg-green-100', text: 'text-green-800', label: 'Nhân viên' },
-      regular: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Thường xuyên' },
-    };
-    const badge = badges[group as keyof typeof badges] || badges.regular;
-    return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badge.bg} ${badge.text}`}>
-        {badge.label}
-      </span>
+    return result.sort(
+      (a, b) =>
+        new Date(b.timestamp || b.date || '').getTime() -
+        new Date(a.timestamp || a.date || '').getTime(),
     );
-  };
+  }, [orders, customerPhone, filterStatus]);
 
   const getInitials = (name: string) => {
     if (!name) return '??';
@@ -178,22 +95,13 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
     );
   };
 
-  const getStatusBadge = (status?: string) => {
-    const badges = {
-      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ xử lý' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã hủy' },
-    };
-    const badge = badges[status as keyof typeof badges] || badges.completed;
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
-        {badge.label}
-      </span>
-    );
-  };
+  const getPaidAmount = (order: Order) =>
+    order.receivedAmount ??
+    (order as { paidAmount?: number }).paidAmount ??
+    0;
 
   const getPaymentStatusBadge = (order: Order) => {
-    const received = order.receivedAmount || order.paidAmount || 0;
+    const received = getPaidAmount(order);
     const cappedReceived = received > order.total ? order.total : received;
     const isPaid = cappedReceived >= order.total;
     
@@ -393,7 +301,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm font-semibold text-yellow-900 mb-1">{t('customerData')?.notes || 'Ghi chú'}</p>
+                          <p className="text-sm font-semibold text-yellow-900 mb-1">{t.customerData?.notes || 'Ghi chú'}</p>
                           <p className="text-sm text-yellow-800">{customer.metadata.notes}</p>
                         </div>
                       </div>
@@ -572,14 +480,14 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 <div className="mb-4">
                   <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
                     <ShoppingBag className="w-5 h-5 text-gray-700" />
-                    {t('customerData')?.purchaseHistory || 'Lịch sử mua hàng'} ({customerOrders.length})
+                    {t.customerData?.purchaseHistory || 'Lịch sử mua hàng'} ({customerOrders.length})
                   </h3>
                 </div>
 
                 {customerOrders.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">{t('customerData')?.noOrders || 'Chưa có đơn hàng nào'}</p>
+                    <p className="text-sm text-gray-500">{t.customerData?.noOrders || 'Chưa có đơn hàng nào'}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -625,7 +533,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 lg:sticky lg:top-6">
               <h3 className="text-base font-bold text-gray-900 mb-6">
-                {t('customerData')?.summary || 'Tổng quan'}
+                {t.customerData?.summary || 'Tổng quan'}
               </h3>
 
               {/* Stats */}
@@ -633,7 +541,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {/* Member Since */}
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-600 mb-1">
-                    {t('customerData')?.memberSince || 'Thành viên từ'}
+                    {t.customerData?.memberSince || 'Thành viên từ'}
                   </div>
                   <div className="font-semibold text-gray-900 text-base">{formatDate(customer.created_at)}</div>
                 </div>
@@ -650,7 +558,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {customer.last_purchase_at && (
                   <div className="bg-gray-50 rounded-xl p-4">
                     <div className="text-sm text-gray-600 mb-1">
-                      {t('customerData')?.lastVisit || 'Lần mua cuối'}
+                      {t.customerData?.lastVisit || 'Lần mua cuối'}
                     </div>
                     <div className="font-semibold text-gray-900 text-base">{formatDateTime(customer.last_purchase_at)}</div>
                   </div>
@@ -659,7 +567,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {/* Total Spent */}
                 <div className="rounded-xl p-4" style={{ backgroundColor: '#FFF5EE', border: '2px solid #FE7410' }}>
                   <div className="text-sm mb-1" style={{ color: '#FE7410' }}>
-                    {t('customerData')?.totalSpent || 'Tổng chi tiêu'}
+                    {t.customerData?.totalSpent || 'Tổng chi tiêu'}
                   </div>
                   <div className="font-bold text-3xl" style={{ color: '#FE7410' }}>
                     {customer.total_spent.toLocaleString('vi-VN')}đ
@@ -669,7 +577,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                 {/* Total Orders */}
                 <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
                   <div className="text-sm text-green-700 mb-1">
-                    {t('customerData')?.orderCount || 'Số đơn hàng'}
+                    {t.customerData?.orderCount || 'Số đơn hàng'}
                   </div>
                   <div className="font-bold text-3xl text-green-600">{customer.total_orders}</div>
                 </div>
@@ -679,7 +587,7 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
                   <div className="bg-pink-50 border-2 border-pink-200 rounded-xl p-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-pink-800">
-                        🎉 {t('customerData')?.birthday || 'Sinh nhật hôm nay'}
+                        🎉 {t.customerData?.birthday || 'Sinh nhật hôm nay'}
                       </span>
                     </div>
                   </div>

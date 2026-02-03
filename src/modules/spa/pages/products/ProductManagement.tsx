@@ -4,7 +4,7 @@ import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { 
   Plus, Pencil, Edit, Trash2, X, Search, Download, 
   Package, Sparkles, Clock, Calendar,
-  RefreshCw, Grid, List, ArrowUpDown, Copy, Zap, Upload, Link2, Trash, Eye
+  RefreshCw, Grid, List, Copy, Zap, Upload, Link2, Trash, Eye
 } from 'lucide-react';
 import type { Product, TreatmentSessionDetail } from '../../../../lib/spa-lib/store';
 // import { supabaseService } from '../../../../lib/spa-lib/supabaseService'; // Removed - using localStorage only
@@ -36,9 +36,9 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterType, setFilterType] = useState<ProductType>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  const [syncing, setSyncing] = useState(false);
+  const [sortField] = useState<SortField>('name');
+  const [sortOrder] = useState<SortOrder>('asc');
+  const [syncing] = useState(false);
   
   // Delete confirmation states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -110,25 +110,6 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
     }
   }, [treatmentSessions]);
 
-  // Load products from server on mount
-  useEffect(() => {
-    // Removed - app uses localStorage only, no server loading needed
-    // loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    // Removed - app uses localStorage only
-    setSyncing(true);
-    try {
-      // const serverProducts = await supabaseService.getProducts();
-      // console.log('Loaded products from server:', serverProducts.length);
-      console.log('Products loaded from localStorage');
-    } catch (error) {
-      console.error('Error loading products:', error);
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   const categories = storeCategories.length > 0 
     ? storeCategories 
@@ -292,15 +273,6 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
     setProductToDelete(null);
   };
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
-    }
-  };
-
   const handleDuplicateProduct = (product: Product) => {
     addProduct({
       name: `${product.name} (Copy)`,
@@ -384,17 +356,6 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
     totalStock: products
       .filter(p => (p.productType || 'product') === 'product')
       .reduce((sum, p) => sum + (p.stock || 0), 0),
-  };
-
-  const getProductTypeIcon = (type?: string) => {
-    switch (type || 'product') {
-      case 'service':
-        return <Sparkles className="w-4 h-4" />;
-      case 'treatment':
-        return <Zap className="w-4 h-4" />;
-      default:
-        return <Package className="w-4 h-4" />;
-    }
   };
 
   const getProductTypeBadge = (type?: string) => {

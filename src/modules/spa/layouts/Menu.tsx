@@ -1,12 +1,11 @@
 // components/Menu.tsx
-import { Link } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import { useStore } from '../../../lib/spa-lib/store';
 import { translations } from '../../../lib/spa-lib/i18n';
 import { loadDemoTreatmentPackages } from '../../../lib/spa-lib/demoData';
 import { injectDemoTechnicianData } from '../../../lib/spa-lib/demoTechnicianData';
 import '../../../lib/spa-lib/demoPackagesV2';
-import type { IndustryType } from '../../../lib/spa-lib/store';
+import type { IndustryType } from '../pages/settings/IndustrySelection';
 import logoFull from "../../../assets/da526f2429ac0b8456776974a6480c4f4260145c.png";
 import logoIcon from "../../../assets/f71a990f243f87339543c6b7dbfdaca1ddb212f4.png";
 import "../../../lib/convenience-store-lib/demoPackagesV2";
@@ -17,11 +16,9 @@ import { TAB_ROUTE_MAP } from "../components/navigation/tabRouteMap";
 import ProfileMenu from '../components/common/ProfileMenu';
 import {
     LayoutGrid, ShoppingCart, Package, Settings as SettingsIcon, BarChart3,
-    HelpCircle, Languages, ClipboardList, Users, User, ChevronDown, ChevronUp,
+    Languages, ClipboardList, Users, User, ChevronDown, ChevronUp,
     ChevronLeft, ChevronRight, FolderOpen, Calendar, Warehouse,
 } from 'lucide-react';
-
-type Tab = 'dashboard' | 'sales' | 'products' | 'orders' | 'order-management' | 'reports' | 'revenue-overview' | 'revenue-staff' | 'revenue-service' | 'revenue-package' | 'revenue-product' | 'customer-report' | 'appointment-report' | 'inventory-report' | 'settings' | 'self-service' | 'customer-view' | 'cashier' | 'customers' | 'users' | 'role-groups' | 'user-permissions' | 'appointments' | 'product-categories' | 'beds' | 'suppliers' | 'customer-groups' | 'stock-in' | 'stock-out';
 
 type UserRole = 'admin' | 'cashier' | 'technician';
 
@@ -36,64 +33,24 @@ export default function Menu() {
     const [stockMenuExpanded, setStockMenuExpanded] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const authRaw = localStorage.getItem("auth");
-        const userRole = JSON.parse(authRaw);
-    const [showOnboardingScreen, setShowOnboardingScreen] = useState(() => {
-        // Check if user has seen onboarding before
-        return !localStorage.getItem('salepa_onboarding_completed');
-    });
-    const [showIndustrySelection, setShowIndustrySelection] = useState(() => {
-        // Show industry selection if onboarding completed but no industry selected
-        return localStorage.getItem('salepa_onboarding_completed') === 'true' && !localStorage.getItem('salepa_industry_selected');
-    });
-    const [isLoggedIn, setIsLoggedIn] = useState(() => {
-        // Check localStorage for login state
-        const savedLoginState = localStorage.getItem('salepa_isLoggedIn');
-        const rememberMe = localStorage.getItem('salepa_rememberMe');
-        return savedLoginState === 'true' && rememberMe === 'true';
-    });
-    const [currentUser, setCurrentUser] = useState(() => {
-        return localStorage.getItem('salepa_username') || '';
-    });
+    const parsedAuth = JSON.parse(authRaw || "null") as { role?: UserRole } | null;
+    const userRole = parsedAuth ?? { role: "admin" as UserRole };
   
     const {
         language,
         setLanguage,
         sidebarCollapsed,
         toggleSidebar,
-        users,
     } = useStore();
     const t = translations[language];
-    const [showHelp, setShowHelp] = useState(false);
+    const role = userRole.role ?? "admin";
 
-    // Get current user's full user object
-    const currentUserObject = users.find(u => u.username === currentUser);
-
-    // Check if first time user
     useEffect(() => {
-        console.log('App useEffect running...');
-        console.log('showOnboardingScreen:', showOnboardingScreen);
-
-        if (showOnboardingScreen) {
-            setShowOnboardingScreen(true);
-        }
-
-        // Load industry data if already selected
         const savedIndustry = localStorage.getItem('salepa_industry_selected') as IndustryType | null;
-        if (savedIndustry && !showOnboardingScreen && !showIndustrySelection) {
-            console.log('Loading saved industry data:', savedIndustry);
+        if (savedIndustry) {
             const { loadIndustryData } = useStore.getState();
             loadIndustryData(savedIndustry);
         }
-
-        // Keyboard shortcut for help
-        const handleKeyPress = (e: KeyboardEvent) => {
-            if (e.key === 'F1') {
-                e.preventDefault();
-                setShowHelp(true);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyPress);
 
         // Expose demo data loader to window for easy testing
         (window as any).loadDemoPackages = () => {
@@ -116,59 +73,7 @@ export default function Menu() {
         console.log('');
         console.log('%c🔧 Load demo technician data:', 'color: #FE7410; font-weight: bold; font-size: 14px;');
         console.log('%c   Gọi loadDemoTechnicians() trong console', 'color: #666; font-size: 12px;');
-
-        return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [showOnboardingScreen, showIndustrySelection]);
-
-    const handleOnboardingComplete = () => {
-        localStorage.setItem('salepa_onboarding_completed', 'true');
-        setShowOnboardingScreen(false);
-        setShowIndustrySelection(true); // Show industry selection after onboarding
-    };
-
-    const handleOnboardingSkip = () => {
-        localStorage.setItem('salepa_onboarding_completed', 'true');
-        setShowOnboardingScreen(false);
-        setShowIndustrySelection(true); // Show industry selection after skipping
-    };
-
-    const handleIndustrySelect = (industry: IndustryType) => {
-        console.log('Selected industry:', industry);
-        localStorage.setItem('salepa_industry_selected', industry);
-
-        // Load industry-specific demo data
-        const { loadIndustryData } = useStore.getState();
-        loadIndustryData(industry);
-
-        setShowIndustrySelection(false);
-        // After industry selection, user will see login screen
-    };
-
-    const handleIndustrySkip = () => {
-        // Set default industry as Spa
-        const defaultIndustry = 'spa-service';
-        localStorage.setItem('salepa_industry_selected', defaultIndustry);
-
-        // Load industry data
-        const { loadIndustryData } = useStore.getState();
-        loadIndustryData(defaultIndustry);
-
-        setShowIndustrySelection(false);
-    };
-
-    const handleQuickAction = (action: string) => {
-        switch (action) {
-            case 'new-sale':
-                navigate(`/${TAB_ROUTE_MAP["sales"]}`);
-                break;
-            case 'add-product':
-                navigate(`/${TAB_ROUTE_MAP["products"]}`);
-                break;
-            case 'view-reports':
-                navigate(`/${TAB_ROUTE_MAP["reports"]}`);
-                break;
-        }
-    };
+    }, []);
 
     const handleTabChange = (tab: Tab) => {
         const path = TAB_ROUTE_MAP[tab];
@@ -187,9 +92,6 @@ export default function Menu() {
         localStorage.removeItem("salepa_userRole");
 
         // Reset login state
-        setIsLoggedIn(false);
-        setCurrentUser("");
-        // setUserRole("admin");
         navigate("/spa/login");
 
         // Don't reload - just show login screen
@@ -228,15 +130,15 @@ export default function Menu() {
     const hasPermission = (permissionId: string): boolean => {
 
         // Admin has all permissions
-        if (userRole.role === 'admin') return true;
+        if (role === 'admin') return true;
 
         // Cashier permissions: dashboard, sales, products_view, orders, customers, appointments (NO reports, NO stock management)
-        if (userRole.role === 'cashier') {
+        if (role === 'cashier') {
             return ['dashboard', 'sales', 'products_view', 'orders', 'customers', 'appointments'].includes(permissionId);
         }
 
         // Technician permissions: dashboard, products_view, appointments (NO sales)
-        if (userRole.role === 'technician') {
+        if (role === 'technician') {
             return ['dashboard', 'products_view', 'appointments'].includes(permissionId);
         }
 
@@ -357,10 +259,10 @@ export default function Menu() {
                                 ? 'bg-[#FE7410]/10 text-[#FE7410]'
                                 : 'text-gray-600 hover:bg-gray-50'
                                 }`}
-                            title={sidebarCollapsed ? t.customer?.title || 'Khách hàng' : undefined}
+                            title={sidebarCollapsed ? t.customerData?.title || 'Khách hàng' : undefined}
                         >
                             <Users className="w-5 h-5" />
-                            {!sidebarCollapsed && <span>{t.customer?.title || 'Khách hàng'}</span>}
+                            {!sidebarCollapsed && <span>{t.customerData?.title || 'Khách hàng'}</span>}
                         </button>
                     )}
 
@@ -381,7 +283,7 @@ export default function Menu() {
                     )}
 
                     {/* 6.5. Stock Management with Submenu - Admin ONLY */}
-                    {userRole.role === 'admin' && (
+                    {role === 'admin' && (
                         <div className="mb-2">
                             <button
                                 onClick={() => {
@@ -731,20 +633,20 @@ export default function Menu() {
                             className="flex items-center gap-3 w-full hover:bg-gray-50 rounded-lg p-2 transition-colors"
                         >
                             <div className="w-10 h-10 bg-gradient-to-br from-[#FE7410] to-[#FF8C3A] rounded-full flex items-center justify-center text-white font-bold">
-                                {userRole.role === 'admin' && (language === 'vi' ? 'A' : 'A')}
-                                    {userRole.role === 'cashier' && (language === 'vi' ? 'C' : 'C')}
-                                    {userRole.role === 'technician' && (language === 'vi' ? 'T' : 'T')}
+                                {role === 'admin' && (language === 'vi' ? 'A' : 'A')}
+                                    {role === 'cashier' && (language === 'vi' ? 'C' : 'C')}
+                                    {role === 'technician' && (language === 'vi' ? 'T' : 'T')}
                             </div>
                             <div className="flex-1 text-left">
                                 <div className="text-sm font-medium text-gray-900">
-                                    {userRole.role === 'admin' && (language === 'vi' ? 'Quản trị viên' : 'Administrator')}
-                                    {userRole.role === 'cashier' && (language === 'vi' ? 'Thu ngân' : 'Cashier')}
-                                    {userRole.role === 'technician' && (language === 'vi' ? 'Kỹ thuật viên' : 'Technician')}
+                                    {role === 'admin' && (language === 'vi' ? 'Quản trị viên' : 'Administrator')}
+                                    {role === 'cashier' && (language === 'vi' ? 'Thu ngân' : 'Cashier')}
+                                    {role === 'technician' && (language === 'vi' ? 'Kỹ thuật viên' : 'Technician')}
                                 </div>
                                 <div className="text-xs text-gray-500">
-                                    {userRole.role === 'admin' && (language === 'vi' ? 'Quản trị viên' : 'Administrator')}
-                                    {userRole.role === 'cashier' && (language === 'vi' ? 'Thu ngân' : 'Cashier')}
-                                    {userRole.role === 'technician' && (language === 'vi' ? 'Kỹ thuật viên' : 'Technician')}
+                                    {role === 'admin' && (language === 'vi' ? 'Quản trị viên' : 'Administrator')}
+                                    {role === 'cashier' && (language === 'vi' ? 'Thu ngân' : 'Cashier')}
+                                    {role === 'technician' && (language === 'vi' ? 'Kỹ thuật viên' : 'Technician')}
                                 </div>
                             </div>
                         </button>

@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, ZoomIn, ZoomOut, Printer, Download } from 'lucide-react';
 import { InvoicePDFDocument } from '../documents/InvoicePDFDocument';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import type { Order } from '../../../../lib/spa-lib/store';
 import { useStore } from '../../../../lib/spa-lib/store';
 import html2canvas from 'html2canvas';
@@ -14,7 +13,6 @@ interface InvoiceViewerProps {
 }
 
 export function InvoiceViewer({ order, onClose }: InvoiceViewerProps) {
-  const { t } = useTranslation();
   const { customers } = useStore();
   const [zoom, setZoom] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);

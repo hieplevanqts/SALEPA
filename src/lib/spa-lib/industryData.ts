@@ -1,9 +1,10 @@
-import type { Product } from './store';
+import type { Product, Order } from './store';
 import type { IndustryType } from '../../modules/spa/pages/settings/IndustrySelection';
 
 export interface IndustryData {
   products: Omit<Product, 'id'>[];
   categories: string[];
+  orders?: Order[];
 }
 
 export const industryDataMap: Record<IndustryType, IndustryData> = {

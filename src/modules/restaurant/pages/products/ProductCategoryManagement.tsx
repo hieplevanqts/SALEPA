@@ -125,6 +125,12 @@ export function ProductCategoryManagement() {
     });
   }, [productCategories, searchQuery, statusFilter]);
 
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleOpenForm = (category?: ProductCategory) => {
     if (category) {
       setEditingCategory(category);
@@ -270,7 +276,7 @@ export function ProductCategoryManagement() {
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map((category, index) => (
+                paginatedCategories.map((category, index) => (
                   <tr key={category.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm text-gray-900">{index + 1}</td>
                     <td className="py-3 px-4 text-sm text-gray-900 font-medium">{category.name}</td>
@@ -335,6 +341,7 @@ export function ProductCategoryManagement() {
 
       {/* Pagination */}
       <Pagination
+        totalPages={totalPages}
         totalItems={filteredCategories.length}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}

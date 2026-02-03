@@ -1,35 +1,31 @@
 import { useState, useMemo } from 'react';
-import { useStore } from '../../../../lib/convenience-store-lib/store';
+import { useStore, type Order } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
-import { Search, Calendar, DollarSign, Package, Clock, CheckCircle, XCircle, CreditCard, Printer, ChevronDown, Users, MessageSquare, X } from 'lucide-react';
-import { CardPaymentForm, type CardData } from '../../components/sales/CardPaymentForm';
-import { QRPaymentForm, type QRPaymentData } from '../../components/sales/QRPaymentForm';
+import { Search, DollarSign, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { CardPaymentForm } from '../../components/sales/CardPaymentForm';
+import { QRPaymentForm } from '../../components/sales/QRPaymentForm';
 import { OrderDetailFullScreen } from '../orders/OrderDetailFullScreen'; // Full screen order detail
 
 export function CashierOrderHistory() {
   const { orders: ordersRaw, updateOrder } = useStore();
   const { t } = useTranslation();
   
-  // Normalize orders to array (handle persisted object format)
-  const orders = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
+  const orders = ordersRaw ?? [];
   
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'week' | 'all'>('today');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('unpaid');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'momo' | 'zalopay' | 'vnpay'>('cash');
   const [receivedAmount, setReceivedAmount] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
   const [showReceipt, setShowReceipt] = useState(false);
-  const [receiptOrder, setReceiptOrder] = useState<any>(null);
+  const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
   const [isSplitPayment, setIsSplitPayment] = useState(false);
   const [splitPayments, setSplitPayments] = useState<{ method: string; amount: number }[]>([]);
-  const [showQRCode, setShowQRCode] = useState(false);
-  const [cardData, setCardData] = useState<CardData | null>(null);
-  const [qrData, setQRData] = useState<QRPaymentData | null>(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
-  const [detailOrder, setDetailOrder] = useState<any>(null);
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   // Get orders with filters
   const filteredOrders = useMemo(() => {
@@ -80,13 +76,12 @@ export function CashierOrderHistory() {
     return { totalRevenue, totalPaid, totalUnpaid, unpaidAmount };
   }, [filteredOrders]);
 
-  const handleCollectPayment = (order: any) => {
+  const handleCollectPayment = (order: Order) => {
     setSelectedOrder(order);
     setReceivedAmount(order.total.toString());
     setPaymentMethod(order.paymentMethod || 'cash');
     setIsSplitPayment(false);
     setSplitPayments([]);
-    setShowQRCode(false);
     setShowPaymentModal(true);
   };
 
@@ -159,7 +154,7 @@ export function CashierOrderHistory() {
     setReceivedAmount('');
   };
 
-  const handleViewOrderDetail = (order: any) => {
+  const handleViewOrderDetail = (order: Order) => {
     setDetailOrder(order);
     setShowOrderDetail(true);
   };
@@ -481,8 +476,7 @@ export function CashierOrderHistory() {
                   <div className="mb-4">
                     <CardPaymentForm
                       amount={selectedOrder.total}
-                      onSuccess={(data) => {
-                        setCardData(data);
+                      onSuccess={() => {
                         handleConfirmPayment();
                       }}
                       onCancel={() => setPaymentMethod('cash')}
@@ -497,8 +491,7 @@ export function CashierOrderHistory() {
                       amount={selectedOrder.total}
                       orderCode={selectedOrder.id}
                       paymentType={paymentMethod}
-                      onSuccess={(data) => {
-                        setQRData(data);
+                      onSuccess={() => {
                         handleConfirmPayment();
                       }}
                       onCancel={() => setPaymentMethod('cash')}
@@ -513,8 +506,7 @@ export function CashierOrderHistory() {
                       amount={selectedOrder.total}
                       orderCode={selectedOrder.id}
                       paymentType={paymentMethod}
-                      onSuccess={(data) => {
-                        setQRData(data);
+                      onSuccess={() => {
                         handleConfirmPayment();
                       }}
                       onCancel={() => setPaymentMethod('cash')}

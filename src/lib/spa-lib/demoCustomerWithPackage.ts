@@ -7,6 +7,13 @@ const getDaysOffset = (days: number) => {
   return date.toISOString().split('T')[0];
 };
 
+const addMinutesToTime = (time: string, minutes: number): string => {
+  const [hours, mins] = time.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, mins + minutes, 0, 0);
+  return date.toTimeString().slice(0, 5);
+};
+
 // Demo Customer
 export const demoCustomer: Customer = {
   id: 'DEMO-CUSTOMER-001',
@@ -264,18 +271,25 @@ export const demoTreatmentPackage: CustomerTreatmentPackage = {
 export const demoAppointments: Appointment[] = [
   {
     id: 'APT-DEMO-001',
+    code: 'LH-DEMO-001',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
     appointmentDate: getDaysOffset(25),
     appointmentTime: '09:00',
+    startTime: '09:00',
+    endTime: addMinutesToTime('09:00', 90),
     status: 'completed',
     services: [
       {
         instanceId: 'inst-1',
         productId: 'spa-service-serv-04',
         productName: 'Facial trị mụn chuyên sâu',
+        productType: 'service',
         duration: 90,
+        price: 0,
+        startTime: '09:00',
+        endTime: addMinutesToTime('09:00', 90),
         technicianId: 'user-tech-001',
         treatmentPackageId: 'PKG-DEMO-001',
         sessionNumber: 1,
@@ -288,18 +302,25 @@ export const demoAppointments: Appointment[] = [
   },
   {
     id: 'APT-DEMO-002',
+    code: 'LH-DEMO-002',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
     appointmentDate: getDaysOffset(18),
     appointmentTime: '10:00',
+    startTime: '10:00',
+    endTime: addMinutesToTime('10:00', 90),
     status: 'completed',
     services: [
       {
         instanceId: 'inst-2',
         productId: 'spa-service-serv-04',
         productName: 'Facial trị mụn chuyên sâu',
+        productType: 'service',
         duration: 90,
+        price: 0,
+        startTime: '10:00',
+        endTime: addMinutesToTime('10:00', 90),
         technicianId: 'user-tech-001',
         treatmentPackageId: 'PKG-DEMO-001',
         sessionNumber: 2,
@@ -312,18 +333,25 @@ export const demoAppointments: Appointment[] = [
   },
   {
     id: 'APT-DEMO-003',
+    code: 'LH-DEMO-003',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
     appointmentDate: getDaysOffset(11),
     appointmentTime: '14:00',
+    startTime: '14:00',
+    endTime: addMinutesToTime('14:00', 120),
     status: 'completed',
     services: [
       {
         instanceId: 'inst-3',
         productId: 'spa-service-serv-04',
         productName: 'Facial trị mụn chuyên sâu',
+        productType: 'service',
         duration: 90,
+        price: 0,
+        startTime: '14:00',
+        endTime: addMinutesToTime('14:00', 90),
         technicianId: 'user-tech-002',
         treatmentPackageId: 'PKG-DEMO-001',
         sessionNumber: 3,
@@ -332,7 +360,11 @@ export const demoAppointments: Appointment[] = [
         instanceId: 'inst-4',
         productId: 'spa-service-serv-06',
         productName: 'LED Light Therapy',
+        productType: 'service',
         duration: 30,
+        price: 0,
+        startTime: addMinutesToTime('14:00', 90),
+        endTime: addMinutesToTime('14:00', 120),
         technicianId: 'user-tech-002',
         treatmentPackageId: 'PKG-DEMO-001',
         sessionNumber: 3,
@@ -345,18 +377,25 @@ export const demoAppointments: Appointment[] = [
   },
   {
     id: 'APT-DEMO-004',
+    code: 'LH-DEMO-004',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
     appointmentDate: getDaysOffset(4),
     appointmentTime: '09:30',
+    startTime: '09:30',
+    endTime: addMinutesToTime('09:30', 90),
     status: 'completed',
     services: [
       {
         instanceId: 'inst-5',
         productId: 'spa-service-serv-05',
         productName: 'Facial dưỡng ẩm chuyên sâu',
+        productType: 'service',
         duration: 90,
+        price: 0,
+        startTime: '09:30',
+        endTime: addMinutesToTime('09:30', 90),
         technicianId: 'user-tech-001',
         treatmentPackageId: 'PKG-DEMO-001',
         sessionNumber: 4,
@@ -369,18 +408,25 @@ export const demoAppointments: Appointment[] = [
   },
   {
     id: 'APT-DEMO-005',
+    code: 'LH-DEMO-005',
     customerId: 'DEMO-CUSTOMER-001',
     customerName: 'Nguyễn Thị Hương',
     customerPhone: '0901234567',
     appointmentDate: getDaysOffset(-3), // Scheduled in 3 days
     appointmentTime: '15:00',
+    startTime: '15:00',
+    endTime: addMinutesToTime('15:00', 135),
     status: 'pending',
     services: [
       {
         instanceId: 'inst-6',
         productId: 'spa-service-serv-04',
         productName: 'Facial trị mụn chuyên sâu',
+        productType: 'service',
         duration: 90,
+        price: 0,
+        startTime: '15:00',
+        endTime: addMinutesToTime('15:00', 90),
         technicianId: 'user-tech-001',
         treatmentPackageId: 'PKG-DEMO-001',
         sessionNumber: 5,
@@ -389,7 +435,11 @@ export const demoAppointments: Appointment[] = [
         instanceId: 'inst-7',
         productId: 'spa-service-serv-03',
         productName: 'Massage foot thư giãn',
+        productType: 'service',
         duration: 45,
+        price: 0,
+        startTime: addMinutesToTime('15:00', 90),
+        endTime: addMinutesToTime('15:00', 135),
         technicianId: 'user-tech-002',
         treatmentPackageId: 'PKG-DEMO-001',
         sessionNumber: 5,

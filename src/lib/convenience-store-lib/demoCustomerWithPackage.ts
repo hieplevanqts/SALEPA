@@ -9,11 +9,29 @@ const getDaysOffset = (days: number) => {
 
 // Demo Customer
 export const demoCustomer: Customer = {
-  id: 'DEMO-CUSTOMER-001',
-  name: 'Nguyễn Thị Hương',
+  _id: 'DEMO-CUSTOMER-001',
+  tenant_id: 'tenant_001',
+  code: 'CUST-DEMO-001',
+  full_name: 'Nguyễn Thị Hương',
   phone: '0901234567',
   address: '123 Nguyễn Huệ, Quận 1, TP.HCM',
   email: 'huong.nguyen@example.com',
+  total_spent: 25500000,
+  total_orders: 15,
+  loyalty_points: 0,
+  status: 'ACTIVE',
+  metadata: {
+    dateOfBirth: '1995-05-15',
+    gender: 'female',
+    notes: 'Khách hàng VIP - Đã sử dụng dịch vụ 3 năm',
+    tags: ['vip'],
+  },
+  created_at: getDaysOffset(365),
+  updated_at: getDaysOffset(365),
+
+  // Legacy fields for compatibility
+  id: 'DEMO-CUSTOMER-001',
+  name: 'Nguyễn Thị Hương',
   dateOfBirth: '1995-05-15',
   gender: 'female',
   customerGroup: 'vip',
@@ -21,6 +39,7 @@ export const demoCustomer: Customer = {
   totalSpent: 25500000,
   orderCount: 15,
   createdAt: getDaysOffset(365),
+  updatedAt: getDaysOffset(365),
 };
 
 // Demo Treatment Package with Full Session Details

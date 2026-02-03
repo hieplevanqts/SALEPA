@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTranslation } from '../lib/useTranslation';
+import { useTranslation } from './useTranslation';
 import { 
   Coffee, Sparkles, Shirt, ShoppingBag, Smartphone, Heart,
   Check, ArrowRight, ChevronRight

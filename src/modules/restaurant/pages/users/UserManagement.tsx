@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
-import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
   Search, Filter, Plus, Edit, Trash2, Key, Power, 
-  UserCircle, Mail, Phone, Shield, ShieldCheck, Wrench,
+  UserCircle, Mail, Phone,
   AlertCircle, Eye, EyeOff, X, Check
 } from 'lucide-react';
 import type { User } from '../../../../lib/restaurant-lib/store';
@@ -11,7 +10,6 @@ import { Pagination } from '../../components/common/Pagination';
 
 export function UserManagement() {
   const { users, createUser, updateUser, deleteUser, toggleUserStatus, changeUserPassword } = useStore();
-  const { t } = useTranslation();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | string>('all');

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { 
-  Coffee, Sparkles, Shirt, ShoppingBag, Smartphone, Heart,
+  Sparkles,
   Check, ArrowRight, ChevronRight
 } from 'lucide-react';
 

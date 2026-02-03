@@ -2,12 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, X, Building2 } from 'lucide-react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import type { Supplier } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
 import { toast } from 'sonner';
 
 export default function SupplierManagement() {
-  const { t } = useTranslation();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier, currentUser } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);

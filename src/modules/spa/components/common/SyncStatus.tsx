@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Wifi, WifiOff, RefreshCw, Cloud, CloudOff, AlertCircle } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, Cloud } from 'lucide-react';
 // import { supabaseService } from '../../../../lib/spa-lib/supabaseService'; // Removed - using localStorage only
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 

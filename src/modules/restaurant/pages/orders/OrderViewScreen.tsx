@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Clock, MessageSquare, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, MapPin, MessageSquare, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { ChatBox } from '../../components/shared/ChatBox';
 import type { SelfServiceOrder } from '../../../../lib/restaurant-lib/store';
@@ -52,6 +52,14 @@ export function OrderViewScreen({ order, onBack, onSendMessage, onOrderNew }: Or
     };
     return texts[status as keyof typeof texts] || status;
   };
+
+  const chatMessages = (order.messages || []).map((message) => ({
+    id: message.id,
+    sender: message.sender,
+    senderName: message.senderName,
+    text: message.message,
+    timestamp: message.timestamp,
+  }));
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -219,7 +227,7 @@ export function OrderViewScreen({ order, onBack, onSendMessage, onOrderNew }: Or
 
           <div className="flex-1 min-h-0">
             <ChatBox
-              messages={order.messages || []}
+              messages={chatMessages}
               onSendMessage={onSendMessage}
               currentUser="customer"
               currentUserName={order.customerName || t('customer') || 'Customer'}

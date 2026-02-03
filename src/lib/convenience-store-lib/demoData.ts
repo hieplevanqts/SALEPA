@@ -1,4 +1,4 @@
-import type { Order, CustomerTreatmentPackage } from './store';
+import type { CartItem, CustomerTreatmentPackage, Order } from './store';
 
 // Helper function to create date with offset
 const getDateOffset = (hoursAgo: number): string => {
@@ -13,7 +13,50 @@ const getDaysOffset = (daysAgo: number): string => {
   return date.toISOString();
 };
 
-export const demoSpaOrders: Order[] = [
+type DemoCartItem = {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  stock: number;
+  quantity: number;
+  discount: number;
+  productType: "service" | "product" | "treatment";
+  duration?: number;
+  sessions?: number;
+};
+
+const toCartItem = (item: DemoCartItem): CartItem => {
+  const timestamp = new Date().toISOString();
+
+  return {
+    _id: item.id,
+    code: item.id,
+    title: item.name,
+    price: item.price,
+    quantity: item.quantity,
+    status: 1,
+    created_at: timestamp,
+    updated_at: timestamp,
+    discount: item.discount,
+    productType: item.productType,
+    duration: item.duration,
+    sessions: item.sessions,
+    stock: item.stock,
+    category: item.category,
+    name: item.name,
+    id: item.id,
+  };
+};
+
+const mapOrderItems = (
+  order: Omit<Order, "items"> & { items: DemoCartItem[] },
+): Order => ({
+  ...order,
+  items: order.items.map(toCartItem),
+});
+
+const rawDemoSpaOrders: Array<Omit<Order, "items"> & { items: DemoCartItem[] }> = [
   // Pending orders - Chưa thanh toán
   {
     id: 'SPA001',
@@ -452,6 +495,8 @@ export const demoSpaOrders: Order[] = [
     note: 'Khách hủy do bận việc đột xuất',
   },
 ];
+
+export const demoSpaOrders: Order[] = rawDemoSpaOrders.map(mapOrderItems);
 
 // Function to load demo Spa orders into localStorage
 export function loadDemoSpaOrders() {

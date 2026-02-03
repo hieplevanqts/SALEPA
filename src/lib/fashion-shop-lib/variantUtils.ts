@@ -188,8 +188,8 @@ export function calculateAvailableQuantity(baseQuantity: number, conversion: num
 export function formatStock(
   quantity: number,
   unit: string,
-  conversion: number,
-  baseUnit?: string
+  _conversion: number,
+  _baseUnit?: string
 ): string {
   return `${quantity} ${unit}`.toLowerCase();
 }

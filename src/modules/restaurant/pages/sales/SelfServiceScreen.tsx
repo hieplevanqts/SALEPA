@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
+import type { Product, SelectedOption } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
-  QrCode, ShoppingBag, Plus, Minus, Trash2, Check, X, 
+  QrCode, ShoppingBag, Check, X, 
   ChevronRight, MapPin, User, Phone, MessageSquare, Coffee,
   Utensils, PackageOpen, Sparkles, Clock, Star, Languages, ClipboardList
 } from 'lucide-react';
@@ -24,7 +25,6 @@ export function SelfServiceScreen() {
     categories,
     currentTable,
     setCurrentTable,
-    clearCart,
     language,
     setLanguage,
     selfServiceOrders,
@@ -46,12 +46,12 @@ export function SelfServiceScreen() {
 
   // Demo tables
   const demoTables = [
-    { id: 'T01', name: 'Bàn 01', qrCode: 'QR-TABLE-01', area: 'Tầng 1' },
-    { id: 'T02', name: 'Bàn 02', qrCode: 'QR-TABLE-02', area: 'Tầng 1' },
-    { id: 'T03', name: 'Bàn 03', qrCode: 'QR-TABLE-03', area: 'Tầng 1' },
-    { id: 'T04', name: 'Bàn 04', qrCode: 'QR-TABLE-04', area: 'Tầng 2' },
-    { id: 'T05', name: 'Bàn 05', qrCode: 'QR-TABLE-05', area: 'Tầng 2' },
-    { id: 'VIP01', name: 'VIP 01', qrCode: 'QR-VIP-01', area: 'VIP' },
+    { id: 'T01', name: 'Bàn 01', qrCode: 'QR-TABLE-01', area: 'Tầng 1', capacity: 4 },
+    { id: 'T02', name: 'Bàn 02', qrCode: 'QR-TABLE-02', area: 'Tầng 1', capacity: 4 },
+    { id: 'T03', name: 'Bàn 03', qrCode: 'QR-TABLE-03', area: 'Tầng 1', capacity: 4 },
+    { id: 'T04', name: 'Bàn 04', qrCode: 'QR-TABLE-04', area: 'Tầng 2', capacity: 6 },
+    { id: 'T05', name: 'Bàn 05', qrCode: 'QR-TABLE-05', area: 'Tầng 2', capacity: 6 },
+    { id: 'VIP01', name: 'VIP 01', qrCode: 'QR-VIP-01', area: 'VIP', capacity: 8 },
   ];
 
   // Calculate totals
@@ -93,7 +93,7 @@ export function SelfServiceScreen() {
     const product = products.find(p => p.id === productId);
     if (product) {
       // Always add directly with default options
-      const productToAdd = { ...product };
+      const productToAdd = { ...product } as Product & { selectedOptions?: SelectedOption[] };
       
       // If product has required options, use first choice as default
       if (product.options && product.options.length > 0) {
@@ -357,7 +357,7 @@ export function SelfServiceScreen() {
               <div>
                 <h1 className="text-2xl font-bold">{t('selfService')}</h1>
                 <p className="text-sm text-blue-100">
-                  {currentTable?.name} • {currentTable?.type === 'dine-in' ? t('dineIn') : t('takeaway')}
+                  {currentTable?.name} • {orderType === 'dine-in' ? t('dineIn') : t('takeaway')}
                 </p>
               </div>
             </div>

@@ -4,15 +4,12 @@ import { systemPermissions, getUserEffectivePermissions } from '../../../../lib/
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog';
-import { Label } from '../../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+ 
 import { Search, Plus, Minus, ShieldCheck, Trash2 } from 'lucide-react';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { toast } from 'sonner';
 import { Pagination } from '../../components/common/Pagination';
 
 export function UserPermissionManagement() {
-  const { t } = useTranslation();
   const { language } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string>('');

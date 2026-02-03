@@ -5,7 +5,7 @@ import logoImage from '../../../../assets/5674d75012c6e5648856a4090ea134ccbacf66
 
 type UserRole = 'admin' | 'cashier' | 'technician';
 
-interface LoginPayload {
+export interface LoginPayload {
   username: string;
   password?: string;
   rememberMe: boolean;
@@ -31,7 +31,7 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regShowPassword, setRegShowPassword] = useState(false);
   const [regShowConfirmPassword, setRegShowConfirmPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
+  const [selectedRole] = useState<UserRole>('admin');
   const handleLogin = (e: React.FormEvent) => {
      e.preventDefault();
 

@@ -9,7 +9,6 @@ interface AppSidebarProps {
   onTabChange?: (tab: string) => void;
   currentUser?: string;
   userRole?: 'admin' | 'cashier' | 'technician';
-  onShowHelp?: () => void;
   onShowProfileMenu?: () => void;
 }
 
@@ -18,7 +17,6 @@ export function AppSidebar({
   onTabChange,
   currentUser = '',
   userRole = 'admin',
-  onShowHelp,
   onShowProfileMenu 
 }: AppSidebarProps) {
   const { language, setLanguage, sidebarCollapsed, toggleSidebar } = useStore();

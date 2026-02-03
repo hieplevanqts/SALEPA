@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { useStore } from '../../../../lib/convenience-store-lib/store';
-import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { 
-  Download, FileText, DollarSign, Users, UserCheck, ShoppingBag, 
-  Calendar, Clock, Package, Star
+  Download, FileText, DollarSign, Users,
+  Calendar, Clock, Star
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -16,8 +14,6 @@ import {
   demoPackageRevenue,
   demoProductRevenue,
   demoCustomerData,
-  demoServiceHistory,
-  demoPackageStatus,
   demoInventoryData
 } from '../../../../lib/convenience-store-lib/demoReportData';
 import { Pagination } from '../../components/pagination/Pagination';
@@ -25,11 +21,14 @@ import { usePagination } from '../../../../lib/convenience-store-lib/usePaginati
 import { useParams, Navigate } from 'react-router-dom';
 type ReportTab = 'revenue-overview' | 'revenue-staff' | 'revenue-service' | 'revenue-package' | 'revenue-product' | 'customer-report' | 'appointment-report' | 'inventory-report';
 
+const getTopStaffEntry = (staff?: Record<string, number>) => {
+  if (!staff) return undefined;
+  return (Object.entries(staff) as Array<[string, number]>).sort((a, b) => b[1] - a[1])[0];
+};
+
 
 
 export function Reports() {
-  const { orders: ordersRaw, products, customers } = useStore();
-  const { t } = useTranslation();
   const { type } = useParams<{ type: ReportTab }>();
 
   if (!type) {
@@ -587,7 +586,7 @@ function RevenueByServiceReport() {
             </thead>
             <tbody className="bg-white dark:bg-gray-800">
               {paginatedData.map((service: any, index) => {
-                const topStaff = Object.entries(service.staff).sort((a: any, b: any) => b[1] - a[1])[0];
+                const topStaff = getTopStaffEntry(service.staff as Record<string, number> | undefined);
                 return (
                   <tr key={index} className="transition-colors hover:bg-[#FEF7ED] dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 last:border-0">
                     <td className="table-content">{service.name}</td>
@@ -682,7 +681,7 @@ function RevenueByPackageReport() {
             </thead>
             <tbody className="bg-white dark:bg-gray-800">
               {paginatedData.map((pkg: any, index) => {
-                const topStaff = Object.entries(pkg.staff).sort((a: any, b: any) => b[1] - a[1])[0];
+                const topStaff = getTopStaffEntry(pkg.staff as Record<string, number> | undefined);
                 return (
                   <tr key={index} className="transition-colors hover:bg-[#FEF7ED] dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 last:border-0">
                     <td className="table-content">{pkg.name}</td>
@@ -769,7 +768,7 @@ function RevenueByProductReport() {
               </thead>
               <tbody className="bg-white dark:bg-gray-800">
                 {paginatedData.map((product: any, index) => {
-                  const topStaff = Object.entries(product.staff).sort((a: any, b: any) => b[1] - a[1])[0];
+                  const topStaff = getTopStaffEntry(product.staff as Record<string, number> | undefined);
                   return (
                     <tr key={index} className="transition-colors hover:bg-[#FEF7ED] dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 last:border-0">
                       <td className="table-content">{product.name}</td>
@@ -803,7 +802,7 @@ function RevenueByProductReport() {
         {/* Mobile Card View */}
         <div className="md:hidden space-y-3">
           {paginatedData.map((product: any, index) => {
-            const topStaff = Object.entries(product.staff).sort((a: any, b: any) => b[1] - a[1])[0];
+            const topStaff = getTopStaffEntry(product.staff as Record<string, number> | undefined);
             return (
               <div
                 key={index}

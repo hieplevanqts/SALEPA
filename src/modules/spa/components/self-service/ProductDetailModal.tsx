@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, MessageSquare, Clock } from 'lucide-react';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
-import type { Product, SelectedOption } from '../../../../lib/spa-lib/store';
+import type { Product } from '../../../../lib/spa-lib/store';
 
 interface ProductDetailModalProps {
   product: Product | null;

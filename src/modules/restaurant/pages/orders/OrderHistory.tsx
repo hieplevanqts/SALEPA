@@ -25,8 +25,12 @@ export function OrderHistory({ onEditOrder, onShowProfileMenu }: OrderHistoryPro
   const isFoodBeverage = selectedIndustry === 'food-beverage';
   
   // Normalize orders to arrays (handle persisted object format)
-  const orders = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
-  const selfServiceOrders = Array.isArray(selfServiceOrdersRaw) ? selfServiceOrdersRaw : Object.values(selfServiceOrdersRaw || {});
+  const orders = Array.isArray(ordersRaw)
+    ? ordersRaw
+    : (Object.values(ordersRaw || {}) as Order[]);
+  const selfServiceOrders = Array.isArray(selfServiceOrdersRaw)
+    ? selfServiceOrdersRaw
+    : (Object.values(selfServiceOrdersRaw || {}) as Order[]);
   
   console.log('OrderHistory - orders:', orders.length);
   console.log('OrderHistory - ordersRaw:', ordersRaw);
@@ -785,8 +789,6 @@ export function OrderHistory({ onEditOrder, onShowProfileMenu }: OrderHistoryPro
           {paymentOrder && (() => {
             const receivedAmount = paymentOrder.receivedAmount || paymentOrder.paidAmount || 0;
             const remainingAmount = paymentOrder.total - receivedAmount;
-            const change = customerAmount ? parseFloat(customerAmount) - remainingAmount : 0;
-            
             const handleCompletePayment = () => {
               const additionalAmount = parseFloat(customerAmount || '0');
               const newReceivedAmount = receivedAmount + additionalAmount;

@@ -4,7 +4,7 @@
 // CHỈ ÁP DỤNG CHO NGÀNH THỜI TRANG
 // =====================================================
 
-import {
+import type {
   Product,
   ProductVariant,
   ProductProperty,
@@ -15,10 +15,9 @@ import {
   ProductWithVariants,
   VariantWithProperties,
   CreateProductFlow,
-  UpdateProductFlow,
   POSSaleFlow,
-  ProductDataModel,
 } from './productDataModel';
+import { ProductDataModel } from './productDataModel';
 
 // =====================================================
 // CONSTANTS
@@ -32,6 +31,7 @@ const INDUSTRY_FASHION_ID = '01942c1a-0001-0000-0000-000000000001';
 // =====================================================
 
 // Sử dụng data từ mockProductData_fashion_only.ts
+import type { ProductVariant as MockProductVariant } from './mockProductData_fashion_only';
 import {
   mockProducts,
   mockProductVariants,
@@ -41,6 +41,12 @@ import {
   mockProductUnits,
   mockProductUnitConfigs,
 } from './mockProductData_fashion_only';
+
+const normalizeVariant = (variant: MockProductVariant): ProductVariant => ({
+  ...variant,
+  quantity: variant.quantity ?? 0,
+  waiting_quantity: variant.waiting_quantity ?? 0,
+});
 
 // =====================================================
 // MOCK PRODUCT SERVICE CLASS
@@ -266,14 +272,17 @@ export class MockProductService {
    * Lấy tất cả Variants của Product
    */
   async getVariantsByProductId(productId: string): Promise<ProductVariant[]> {
-    return mockProductVariants.filter(v => v.product_id === productId && !v.deleted_at);
+    return mockProductVariants
+      .filter(v => v.product_id === productId && !v.deleted_at)
+      .map(normalizeVariant);
   }
 
   /**
    * Lấy Variant theo ID
    */
   async getVariantById(id: string): Promise<ProductVariant | null> {
-    return mockProductVariants.find(v => v._id === id && !v.deleted_at) || null;
+    const variant = mockProductVariants.find(v => v._id === id && !v.deleted_at);
+    return variant ? normalizeVariant(variant) : null;
   }
 
   /**
@@ -304,7 +313,9 @@ export class MockProductService {
    * Tìm Variant theo barcode hoặc SKU (POS)
    */
   async findVariantForPOS(searchTerm: string): Promise<POSSaleFlow> {
-    const allVariants = mockProductVariants.filter(v => !v.deleted_at);
+    const allVariants = mockProductVariants
+      .filter(v => !v.deleted_at)
+      .map(normalizeVariant);
     const variant = ProductDataModel.searchVariantForPOS(searchTerm, allVariants);
 
     if (!variant) {
@@ -338,11 +349,11 @@ export class MockProductService {
     const index = mockProductVariants.findIndex(v => v._id === variantId);
     if (index === -1) return null;
 
-    const updatedVariant = {
+    const updatedVariant = normalizeVariant({
       ...mockProductVariants[index],
       ...updates,
       updated_at: new Date().toISOString(),
-    };
+    } as MockProductVariant);
 
     mockProductVariants[index] = updatedVariant;
 
@@ -548,7 +559,7 @@ export class MockProductService {
   /**
    * Cập nhật tồn kho Variant
    */
-  async updateVariantStock(variantId: string, quantityChange: number, reason?: string) {
+  async updateVariantStock(variantId: string, quantityChange: number, _reason?: string) {
     const variant = await this.getVariantById(variantId);
     if (!variant) {
       throw new Error('Variant not found');
@@ -570,7 +581,7 @@ export class MockProductService {
   /**
    * Cập nhật tồn kho Product
    */
-  async updateProductStock(productId: string, quantityChange: number, reason?: string) {
+  async updateProductStock(productId: string, quantityChange: number, _reason?: string) {
     const product = await this.getProductById(productId);
     if (!product) {
       throw new Error('Product not found');
@@ -606,9 +617,28 @@ export class MockProductService {
       if (!product) {
         throw new Error('Product not found');
       }
+      if (product.status === 0) {
+        return {
+          can_sell: false,
+          error: 'Sản phẩm đã bị vô hiệu hóa',
+        };
+      }
 
-      const canSell = ProductDataModel.canSellProduct(product, quantity);
-      return canSell;
+      if (product.is_sold_out || product.quantity === 0) {
+        return {
+          can_sell: false,
+          error: 'Sản phẩm đã hết hàng',
+        };
+      }
+
+      if (quantity > product.quantity) {
+        return {
+          can_sell: false,
+          error: `Chỉ còn ${product.quantity} sản phẩm trong kho`,
+        };
+      }
+
+      return { can_sell: true };
     }
   }
 }

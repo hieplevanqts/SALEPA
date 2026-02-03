@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { 
-  Plus, Pencil, Trash2, X, Search, Download, 
-  Package, RefreshCw, Grid3x3, List, ArrowUpDown, Eye, Copy, Upload, Image as ImageIcon, FileSpreadsheet, FileDown, AlertCircle, CheckCircle
+  Plus, Pencil, Trash2, X, Search,
+  Package, RefreshCw, Grid3x3, List, ArrowUpDown, Upload, FileSpreadsheet, FileDown, CheckCircle
 } from 'lucide-react';
 import type { Product } from '../../../../lib/convenience-store-lib/store';
 import { Pagination } from '../../components/pagination/Pagination';
@@ -97,7 +97,6 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
   
   // Excel Import states
   const [showImportModal, setShowImportModal] = useState(false);
-  const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreviewData, setImportPreviewData] = useState<any[]>([]);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importStep, setImportStep] = useState<'upload' | 'preview' | 'importing' | 'success'>('upload');
@@ -153,13 +152,11 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
 
   const categories = storeCategories.length > 0 
     ? storeCategories 
-    : Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+    : Array.from(new Set(products.map(p => p.category ?? p.product_category_id).filter(Boolean)));
   
   // Calculate stats
   const activeProducts = products.filter(p => p.status === 1);
   const totalProducts = activeProducts.length;
-  const totalServices = 0; // Placeholder
-  const totalPackages = 0; // Placeholder
   const totalStock = activeProducts.reduce((sum, p) => sum + (p.quantity || p.stock || 0), 0);
   const totalInventoryValue = activeProducts.reduce((sum, p) => {
     const quantity = p.quantity || p.stock || 0;
@@ -186,8 +183,8 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
         aValue = a.price;
         bValue = b.price;
       } else {
-        aValue = (a.category || '').toLowerCase();
-        bValue = (b.category || '').toLowerCase();
+        aValue = (a.category || a.product_category_id || '').toLowerCase();
+        bValue = (b.category || b.product_category_id || '').toLowerCase();
       }
       
       if (sortOrder === 'asc') {
@@ -220,6 +217,7 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
       title: formData.title,
       brief: formData.brief || '',
       content: formData.content || '',
+      product_category_id: formData.product_category_id || '',
       price: parseFloat(formData.price) || 0,
       cost_price: parseFloat(formData.cost_price) || 0,
       quantity: parseInt(formData.quantity) || 0,
@@ -234,7 +232,7 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
       id: editingProduct?._id || crypto.randomUUID(),
       name: formData.title,
       stock: parseInt(formData.quantity) || 0,
-      category: formData.category || '',
+      category: formData.product_category_id || '',
       description: formData.brief || '',
     };
 
@@ -298,47 +296,6 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
     setShowModal(false);
   };
 
-  const handleExport = () => {
-    const csvContent = [
-      ['Mã SP', 'Tên sản phẩm', 'Giá bán', 'Giá vốn', 'Tồn kho', 'Danh mục', 'Trạng thái'].join(','),
-      ...filteredProducts.map(p => [
-        p.code,
-        p.title || p.name,
-        p.price,
-        p.cost_price || 0,
-        p.quantity || p.stock,
-        p.category || '',
-        p.status === 1 ? 'Hoạt động' : 'Ngừng'
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `products_${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-  };
-
-  const handleExportExcel = () => {
-    const worksheetData = [
-      ['Mã SP', 'Tên sản phẩm', 'Giá bán', 'Giá vốn', 'Tồn kho', 'Danh mục', 'Trạng thái'],
-      ...filteredProducts.map(p => [
-        p.code,
-        p.title || p.name,
-        p.price,
-        p.cost_price || 0,
-        p.quantity || p.stock,
-        p.category || '',
-        p.status === 1 ? 'Hoạt động' : 'Ngừng'
-      ])
-    ];
-
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
-    XLSX.writeFile(workbook, `products_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  };
-
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -372,8 +329,6 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
       return;
     }
 
-    setImportFile(file);
-    
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
@@ -389,7 +344,6 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
         }
 
         // Parse data
-        const headers = jsonData[0];
         const rows = jsonData.slice(1);
         const errors: string[] = [];
         const previewData: any[] = [];
@@ -492,7 +446,6 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
   };
 
   const resetImportModal = () => {
-    setImportFile(null);
     setImportPreviewData([]);
     setImportErrors([]);
     setImportStep('upload');

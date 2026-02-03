@@ -3,8 +3,6 @@ import { useTranslation } from "../../../../lib/convenience-store-lib/useTransla
 import {
   DollarSign,
   Clock,
-  History,
-  LogOut,
   User,
   ChevronLeft,
   ChevronRight,

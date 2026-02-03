@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
-import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
-  Download, FileText, DollarSign, Users, UserCheck, ShoppingBag, 
-  Calendar, Clock, Package, Star, AlertCircle
+  Download, FileText, DollarSign, Users,
+  Calendar, Clock, AlertCircle
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -16,8 +15,6 @@ import {
   demoPackageRevenue,
   demoProductRevenue,
   demoCustomerData,
-  demoServiceHistory,
-  demoPackageStatus,
   demoInventoryData,
   demoAppointmentStaffData
 } from '../../../../lib/restaurant-lib/demoReportData';
@@ -27,8 +24,7 @@ import { useParams, Navigate } from 'react-router-dom';
 type ReportTab = 'revenue-overview' | 'revenue-staff' | 'revenue-service' | 'revenue-package' | 'revenue-product' | 'customer-report' | 'appointment-report' | 'inventory-report';
 
 export function Reports() {
-  const { orders: ordersRaw, products, customers, selectedIndustry } = useStore();
-  const { t } = useTranslation();
+  const { selectedIndustry } = useStore();
   const isFoodBeverage = selectedIndustry === 'food-beverage';
     const { type } = useParams<{ type: ReportTab }>();
   

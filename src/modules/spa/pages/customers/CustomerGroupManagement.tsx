@@ -2,12 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, X, Users } from 'lucide-react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import type { CustomerGroup } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
 import { toast } from 'sonner';
 
 export default function CustomerGroupManagement() {
-  const { t } = useTranslation();
   const { customerGroups, addCustomerGroup, updateCustomerGroup, deleteCustomerGroup, currentUser } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [editingGroup, setEditingGroup] = useState<CustomerGroup | null>(null);

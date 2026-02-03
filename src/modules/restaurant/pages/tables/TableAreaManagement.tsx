@@ -2,11 +2,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import type { TableArea } from '../../../../lib/restaurant-lib/store';
 import { Plus, Search, Edit, Trash2, Grid3x3 } from 'lucide-react';
-import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
 
 export function TableAreaManagement() {
-  const { t } = useTranslation();
   const { tableAreas, addTableArea, updateTableArea, deleteTableArea } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'recent' | 'area'>('name');

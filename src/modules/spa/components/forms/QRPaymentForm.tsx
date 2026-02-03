@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
-import { QrCode, Copy, CheckCircle, AlertCircle, Clock, Building2, ChevronDown, ExternalLink, Settings } from 'lucide-react';
+import { Copy, CheckCircle } from 'lucide-react';
 
 interface QRPaymentFormProps {
   amount: number;
@@ -20,27 +19,12 @@ export interface QRPaymentData {
   transactionId?: string;
 }
 
-const BANKS = [
-  { code: 'VCB', name: 'Vietcombank', logo: '🏦', accountNumber: '1234567890', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'TCB', name: 'Techcombank', logo: '🏦', accountNumber: '9876543210', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'MB', name: 'MB Bank', logo: '🏦', accountNumber: '1122334455', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'VPB', name: 'VPBank', logo: '🏦', accountNumber: '5544332211', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'ACB', name: 'ACB', logo: '🏦', accountNumber: '6677889900', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'BIDV', name: 'BIDV', logo: '🏦', accountNumber: '0099887766', accountName: 'CONG TY POS SYSTEM' },
-];
-
-export function QRPaymentForm({ amount, orderCode, onSuccess, onCancel, paymentType }: QRPaymentFormProps) {
-  const { t } = useTranslation();
-  const [selectedBank, setSelectedBank] = useState(BANKS[0]);
-  const [showBankList, setShowBankList] = useState(false);
+export function QRPaymentForm(props: QRPaymentFormProps) {
+  const { amount, orderCode, paymentType } = props;
   const [copied, setCopied] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [transactionId, setTransactionId] = useState('');
 
   // Load payment settings from localStorage
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
-  const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('pos-payment-settings');
@@ -49,15 +33,6 @@ export function QRPaymentForm({ amount, orderCode, onSuccess, onCancel, paymentT
       setPaymentSettings(settings);
       
       // Check if configured based on payment type
-      if (paymentType === 'transfer') {
-        setIsConfigured(!!(settings.bankName && settings.accountNumber && settings.accountName));
-      } else if (paymentType === 'momo') {
-        setIsConfigured(!!(settings.momoPhone && settings.momoName));
-      } else if (paymentType === 'zalopay') {
-        setIsConfigured(!!(settings.zalopayPhone && settings.zalopayName));
-      } else if (paymentType === 'vnpay') {
-        setIsConfigured(!!(settings.vnpayPhone && settings.vnpayName));
-      }
     }
   }, [paymentType]);
 
@@ -122,21 +97,6 @@ export function QRPaymentForm({ amount, orderCode, onSuccess, onCancel, paymentT
       // For e-wallets, use a placeholder QR
       return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${paymentType.toUpperCase()}:${amount}:${paymentContent}`)}`;
     }
-  };
-
-  // Timer countdown
-  useEffect(() => {
-    if (timeLeft > 0 && !isConfirmed) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [timeLeft, isConfirmed]);
-
-  // Format time
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Copy to clipboard

@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
-import { Search, Plus, Minus, Trash2, X, Percent, DollarSign, Printer, User, Save, FileText, Keyboard, Barcode, Grid3x3, List, Calculator as CalcIcon, Tag, Clock, Star, MessageSquare, QrCode, Split, UserPlus, Package, Sparkles, Scissors } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, X, Percent, Printer, Save, FileText, Keyboard, Barcode, Grid3x3, List, Calculator as CalcIcon, Tag, Clock, Star, MessageSquare, QrCode, Split, Package, Sparkles, Scissors } from 'lucide-react';
 import { Calculator } from '../../components/forms/Calculator';
 import { CustomerForm } from '../../components/forms/CustomerForm';
-import type { Customer } from '../../../../lib/spa-lib/store';
+import type { PaymentHistory, Product } from '../../../../lib/spa-lib/store';
 
 type PaymentMethodType = 'cash' | 'card' | 'transfer';
 type ProductTypeFilter = 'all' | 'product' | 'service' | 'treatment';
@@ -28,7 +28,6 @@ export function SalesScreen() {
     recentProducts,
     favoriteProducts,
     toggleFavorite,
-    customers,
     settings
   } = useStore();
   const { t } = useTranslation();
@@ -41,7 +40,6 @@ export function SalesScreen() {
   const [showHeldBills, setShowHeldBills] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSplitPayment, setShowSplitPayment] = useState(false);
-  const [showQRPayment, setShowQRPayment] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('cash');
@@ -56,10 +54,8 @@ export function SalesScreen() {
   const [calculatorTarget, setCalculatorTarget] = useState<{ type: 'quantity' | 'discount' | 'payment', itemId?: string } | null>(null);
   const [itemNoteEdit, setItemNoteEdit] = useState<string | null>(null);
   const [splitPayments, setSplitPayments] = useState<{ method: PaymentMethodType; amount: number }[]>([]);
-  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
@@ -68,14 +64,14 @@ export function SalesScreen() {
   const allCategories = ['all', ...categories];
 
   // Filter products based on selection
-  let displayProducts = products;
+  let displayProducts: Product[] = products;
   if (productFilter === 'recent') {
-    displayProducts = products.filter(p => recentProducts.includes(p.id));
+    displayProducts = recentProducts;
   } else if (productFilter === 'favorite') {
-    displayProducts = products.filter(p => favoriteProducts.includes(p.id));
+    displayProducts = favoriteProducts;
   }
 
-  const filteredProducts = displayProducts.filter((product) => {
+  const filteredProducts: Product[] = displayProducts.filter((product) => {
     const matchesSearch = 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.barcode?.includes(searchQuery);
@@ -85,13 +81,6 @@ export function SalesScreen() {
       (productTypeFilter === 'service' && product.productType === 'service') ||
       (productTypeFilter === 'treatment' && product.productType === 'treatment');
     return matchesSearch && matchesCategory && matchesProductType && product.stock > 0;
-  });
-
-  // Filter customers based on search
-  const filteredCustomers = customers.filter((customer) => {
-    const query = customerSearchQuery.toLowerCase();
-    return customer.name.toLowerCase().includes(query) || 
-           customer.phone.includes(query);
   });
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -192,7 +181,6 @@ export function SalesScreen() {
         setBarcodeMode(false);
         setShowCalculator(false);
         setShowSplitPayment(false);
-        setShowQRPayment(false);
         setShowCustomerSearch(false);
         setShowCustomerForm(false);
       }
@@ -254,7 +242,6 @@ export function SalesScreen() {
       note: note || undefined,
       discount: calculatedOrderDiscount,
       receivedAmount,
-      paidAmount: receivedAmount,
       changeAmount: Math.max(0, receivedAmount - total),
       paymentHistory: initialPaymentHistory,
     });
@@ -267,8 +254,6 @@ export function SalesScreen() {
     setOrderDiscountType('amount');
     setNote('');
     setCustomerAmount('');
-    setSelectedCustomer(null);
-    setCustomerSearchQuery('');
     setShowCustomerSearch(false);
     alert(t('orderCreated'));
   };
@@ -318,8 +303,6 @@ export function SalesScreen() {
     recallBill(billId);
     setShowHeldBills(false);
   };
-
-  const quickAmounts = [20000, 50000, 100000, 200000, 500000, 1000000];
 
   // Category images mapping
   const categoryImages: Record<string, string> = {
@@ -392,10 +375,10 @@ export function SalesScreen() {
     const currentUser = localStorage.getItem('salepa_username') || '';
     
     // Create initial payment history entry for split payment
-    const initialPaymentHistory = [{
+    const initialPaymentHistory: PaymentHistory[] = [{
       id: `PAY-${Date.now()}`,
       amount: totalPaid,
-      paymentMethod: 'cash', // Default for split payment
+      paymentMethod: 'cash' as const, // Default for split payment
       paidAt: new Date().toISOString(),
       paidBy: currentUser,
       note: note || '',
@@ -671,12 +654,12 @@ export function SalesScreen() {
                       toggleFavorite(product.id);
                     }}
                     className={`absolute top-2 right-2 p-2 rounded-lg transition-all ${
-                      favoriteProducts.includes(product.id)
+                      favoriteProducts.some((p) => p.id === product.id)
                         ? 'bg-yellow-500 text-white shadow-lg'
                         : 'bg-white/80 text-gray-400 hover:text-yellow-500 hover:bg-white'
                     }`}
                   >
-                    <Star className={`w-5 h-5 ${favoriteProducts.includes(product.id) ? 'fill-current' : ''}`} />
+                    <Star className={`w-5 h-5 ${favoriteProducts.some((p) => p.id === product.id) ? 'fill-current' : ''}`} />
                   </button>
                 </div>
               ))}
@@ -749,12 +732,12 @@ export function SalesScreen() {
                       toggleFavorite(product.id);
                     }}
                     className={`absolute top-4 right-4 p-2 rounded-lg transition-all ${
-                      favoriteProducts.includes(product.id)
+                      favoriteProducts.some((p) => p.id === product.id)
                         ? 'bg-yellow-500 text-white shadow-lg'
                         : 'bg-white text-gray-400 hover:text-yellow-500'
                     }`}
                   >
-                    <Star className={`w-4 h-4 ${favoriteProducts.includes(product.id) ? 'fill-current' : ''}`} />
+                    <Star className={`w-4 h-4 ${favoriteProducts.some((p) => p.id === product.id) ? 'fill-current' : ''}`} />
                   </button>
                 </div>
               ))}
@@ -1061,7 +1044,10 @@ export function SalesScreen() {
           {/* QR & Split Payment */}
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => setShowQRPayment(true)}
+              onClick={() => {
+                setPaymentMethod('transfer');
+                setShowCheckout(true);
+              }}
               disabled={cart.length === 0 || !currentShift}
               className="py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-lg hover:from-pink-700 hover:to-rose-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all shadow-md disabled:shadow-none flex items-center justify-center gap-2 text-sm"
             >
@@ -1498,15 +1484,15 @@ export function SalesScreen() {
                             {bill.customerName || t('walkInCustomer')}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {new Date(bill.createdAt).toLocaleString('vi-VN')}
+                            {new Date(bill.heldAt).toLocaleString('vi-VN')}
                           </div>
                           <div className="text-sm text-gray-600 mt-2">
-                            {bill.cart.length} {t('items_count')}: {bill.cart.map(item => `${item.name} (${item.quantity})`).join(', ')}
+                            {bill.items.length} {t('items_count')}: {bill.items.map(item => `${item.name} (${item.quantity})`).join(', ')}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-orange-600 font-medium text-lg">
-                            {bill.cart.reduce((sum, item) => sum + (item.price - item.discount) * item.quantity, 0).toLocaleString('vi-VN')}{t('vnd')}
+                            {bill.items.reduce((sum, item) => sum + (item.price - item.discount) * item.quantity, 0).toLocaleString('vi-VN')}{t('vnd')}
                           </div>
                         </div>
                       </div>
@@ -1591,6 +1577,7 @@ export function SalesScreen() {
             </div>
             <div className="p-6">
               <CustomerForm
+                customer={null}
                 onClose={() => {
                   setShowCustomerForm(false);
                   // Optionally refresh or update after adding customer

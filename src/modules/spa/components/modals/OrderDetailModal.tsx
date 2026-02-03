@@ -14,6 +14,7 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
   const { addMessageToOrder, updateOrderStatus } = useStore();
 
   if (!order) return null;
+  const voucherDiscount = order.voucherDiscount ?? 0;
 
   // Check if this is a self-service order
   const isSelfServiceOrder = (order: Order | SelfServiceOrder): order is SelfServiceOrder => {
@@ -265,13 +266,13 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                     <span className="font-semibold">-{order.discount.toLocaleString()}đ</span>
                   </div>
                 )}
-                {order.voucherCode && order.voucherDiscount > 0 && (
+                {order.voucherCode && voucherDiscount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <div className="flex flex-col">
                       <span>{t('voucher') || 'Voucher'}</span>
                       <span className="text-xs text-gray-500">{order.voucherCode}</span>
                     </div>
-                    <span className="font-semibold">-{order.voucherDiscount?.toLocaleString()}đ</span>
+                    <span className="font-semibold">-{voucherDiscount.toLocaleString()}đ</span>
                   </div>
                 )}
                 <div className="border-t-2 border-green-300 pt-3 flex justify-between items-center">

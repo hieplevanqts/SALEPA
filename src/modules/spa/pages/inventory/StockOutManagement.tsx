@@ -1,8 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { PackageMinus, Plus, Search, Trash2, X, Printer, ChevronLeft, ChevronRight, ShoppingCart, Receipt, Eye, Edit, AlertTriangle, Calendar, ChevronDown } from 'lucide-react';
+import { PackageMinus, Plus, Search, Trash2, X, ChevronLeft, ChevronRight, Eye, Edit, AlertTriangle, Calendar, ChevronDown } from 'lucide-react';
 import { useStore } from '../../../../lib/spa-lib/store';
 import type { StockOutItem, StockOutReceipt } from '../../../../lib/spa-lib/store';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
 
 const STOCK_OUT_REASONS = {
@@ -15,8 +14,7 @@ const STOCK_OUT_REASONS = {
 } as const;
 
 export function StockOutManagement() {
-  const { t } = useTranslation();
-  const { products, stockOutReceipts, createStockOutReceipt, updateStockOutReceipt, deleteStockOutReceipt, currentUser } = useStore();
+  const { products, stockOutReceipts, createStockOutReceipt, updateStockOutReceipt, deleteStockOutReceipt } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<StockOutReceipt | null>(null);
@@ -310,10 +308,13 @@ export function StockOutManagement() {
       setFormItems(newItems);
     } else {
       // Add new
+      const costPrice = product.costPrice ?? product.price ?? 0;
       const newItem: StockOutItem = {
         productId: product.id,
         productName: product.name,
         quantity: 1,
+        costPrice,
+        totalPrice: costPrice,
       };
       setFormItems([...formItems, newItem]);
     }
@@ -328,6 +329,7 @@ export function StockOutManagement() {
     if (quantity <= 0) return;
     const newItems = [...formItems];
     newItems[index].quantity = quantity;
+    newItems[index].totalPrice = newItems[index].costPrice * quantity;
     setFormItems(newItems);
   };
   
@@ -350,11 +352,13 @@ export function StockOutManagement() {
       }
     }
     
+    const totalAmount = formItems.reduce((sum, item) => sum + item.totalPrice, 0);
     const receiptData = {
       date: formDate,
       reason: formReason,
+      staffName: localStorage.getItem('salepa_username') || 'system',
       items: formItems,
-      totalQuantity: formItems.reduce((sum, item) => sum + item.quantity, 0),
+      totalAmount,
       notes: formNotes,
     };
     
@@ -567,7 +571,9 @@ export function StockOutManagement() {
                         {receipt.items.length}
                       </td>
                       <td className="table-content text-center">
-                        <span className="font-semibold">{receipt.totalQuantity}</span>
+                        <span className="font-semibold">
+                          {receipt.items.reduce((sum, item) => sum + item.quantity, 0)}
+                        </span>
                       </td>
                       <td className="table-content">
                         {receipt.createdBy}
@@ -706,7 +712,7 @@ export function StockOutManagement() {
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-gray-900">Tổng số lượng xuất:</span>
                     <span className="font-bold text-2xl" style={{ color: '#FE7410' }}>
-                      {viewingReceipt.totalQuantity}
+                      {viewingReceipt.items.reduce((sum, item) => sum + item.quantity, 0)}
                     </span>
                   </div>
                 </div>

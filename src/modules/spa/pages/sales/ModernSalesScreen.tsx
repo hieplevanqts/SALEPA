@@ -1,19 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../../../lib/spa-lib/store';
+import type { CreateOrderInput } from '../../../../lib/spa-lib/store';
 import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
 import { toast } from 'sonner';
 import { 
-  Search, Plus, Minus, Trash2, X, DollarSign, Printer, User, 
+  Search, Plus, Minus, Trash2, X, DollarSign, User, 
   Clock, CreditCard, Smartphone, QrCode, Zap, Grid3x3, List,
-  Tag, Star, TrendingUp, ShoppingBag, Calculator, Percent,
-  Menu, ChevronRight, Check, AlertCircle, Barcode, Save,
-  RotateCcw, FileText, Users, PauseCircle, PlayCircle,
-  Settings, History, Grid, Monitor, Keyboard, Edit3, Edit2,
-  MessageSquare, Receipt, Eye, Volume2, Bell, Gift, SplitSquare,
-  Package, Scissors, Sparkles, UserPlus
+  Tag, Star, ShoppingBag, Percent,
+  Check, AlertCircle, Barcode,
+  RotateCcw, PauseCircle, PlayCircle,
+  History, Grid, Monitor, Edit2,
+  Receipt, Volume2, Gift,
+  Package, Scissors, Sparkles
 } from 'lucide-react';
-import { CardPaymentForm, type CardData } from '../../components/forms/CardPaymentForm';
-import { QRPaymentForm, type QRPaymentData } from '../../components/forms/QRPaymentForm';
+import { CardPaymentForm } from '../../components/forms/CardPaymentForm';
+import { QRPaymentForm } from '../../components/forms/QRPaymentForm';
 import { Receipt as ReceiptModal } from '../../components/common/Receipt';
 import { CustomerForm } from '../../components/forms/CustomerForm';
 
@@ -42,7 +43,6 @@ export function ModernSalesScreen() {
     removeFromCart, 
     updateCartQuantity, 
     createOrder, 
-    updateOrder,
     deleteOrder,
     categories,
     recentProducts,
@@ -54,11 +54,8 @@ export function ModernSalesScreen() {
     deleteHeldBill,
     orders,
     settings,
-    sidebarCollapsed,
-    toggleSidebar,
     addToRecent,
     customers,
-    addCustomer,
     createCustomerTreatmentPackage,
     editingOrder,
     setEditingOrder,
@@ -74,8 +71,6 @@ export function ModernSalesScreen() {
   const [showCustomerDisplay, setShowCustomerDisplay] = useState(false);
   const [showRecentTransactions, setShowRecentTransactions] = useState(false);
   const [showQuickQuantity, setShowQuickQuantity] = useState(false);
-  const [showItemNote, setShowItemNote] = useState(false);
-  const [showPriceOverride, setShowPriceOverride] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
@@ -92,8 +87,6 @@ export function ModernSalesScreen() {
   const [selectedCartItem, setSelectedCartItem] = useState<string | null>(null);
   const [quickQuantity, setQuickQuantity] = useState('1');
   const [selectedProductForQty, setSelectedProductForQty] = useState<string | null>(null);
-  const [itemNote, setItemNote] = useState('');
-  const [priceOverride, setPriceOverride] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [tipAmount, setTipAmount] = useState(0);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -184,7 +177,6 @@ export function ModernSalesScreen() {
   ];
 
   // Quick amounts for cash payment
-  const quickAmounts = [50000, 100000, 200000, 500000];
   
   // Quick discount percentages
   const quickDiscounts = [5, 10, 15, 20];
@@ -235,7 +227,7 @@ export function ModernSalesScreen() {
 
     const product = products.find(p => p.barcode === barcodeInput.trim());
     if (product) {
-      addToCart(product.id);
+      addToCart(product);
       playSound('beep');
       setBarcodeInput('');
     } else {
@@ -333,8 +325,12 @@ export function ModernSalesScreen() {
       changeAmount: calculatedChange,
     }];
 
+    const orderStatus = (receivedAmt >= total ? 'completed' : 'pending') as
+      | 'completed'
+      | 'pending';
+
     // Create order with receipt info
-    const orderData = {
+    const orderData: CreateOrderInput = {
       paymentMethod,
       customerId: selectedCustomerId || undefined, // Lưu customerId để lấy thông tin chi tiết
       customerName: finalCustomerName,
@@ -343,7 +339,7 @@ export function ModernSalesScreen() {
       voucherCode: appliedVoucher?.code || '',
       voucherDiscount: voucherDiscount, // Lưu riêng giảm giá từ voucher
       note: orderNote,
-      status: receivedAmt >= total ? 'completed' : 'pending',
+      status: orderStatus,
       paidAt: new Date().toISOString(),
       receivedAmount: receivedAmt,
       changeAmount: calculatedChange,
@@ -367,23 +363,51 @@ export function ModernSalesScreen() {
     if (selectedCustomerId) {
       cart.forEach(item => {
         if (item.productType === 'treatment' && item.sessions && item.sessions > 0) {
-          // Tìm các dịch vụ đi kèm trong liệu trình
+          // Build session details for the treatment package
           const treatmentProduct = products.find(p => p.id === item.id);
-          const serviceIds = treatmentProduct?.sessionDetails 
-            ? treatmentProduct.sessionDetails.flatMap(session => 
-                session.services.map(s => s.id)
-              )
-            : [];
+          const sessionDetails = treatmentProduct?.sessionDetails || [];
+          const totalSessions = item.sessions || 0;
+          const sessions = sessionDetails.length > 0
+            ? sessionDetails.map((session) => ({
+                sessionNumber: session.sessionNumber,
+                sessionName: `Buổi ${session.sessionNumber}`,
+                items: [
+                  ...session.services.map((service) => {
+                    const serviceProduct = products.find(p => p.id === service.id);
+                    return {
+                      productId: service.id,
+                      productName: serviceProduct?.name ?? service.id,
+                      productType: 'service' as const,
+                      quantity: service.quantity,
+                      duration: serviceProduct?.duration,
+                    };
+                  }),
+                  ...session.products.map((product) => {
+                    const productInfo = products.find(p => p.id === product.id);
+                    return {
+                      productId: product.id,
+                      productName: productInfo?.name ?? product.id,
+                      productType: 'product' as const,
+                      quantity: product.quantity,
+                    };
+                  }),
+                ],
+              }))
+            : Array.from({ length: totalSessions }, (_, index) => ({
+                sessionNumber: index + 1,
+                sessionName: `Buổi ${index + 1}`,
+                items: [],
+              }));
           
           createCustomerTreatmentPackage({
             customerId: selectedCustomerId,
             customerName: finalCustomerName,
             treatmentProductId: item.id,
             treatmentName: item.name,
-            totalSessions: item.sessions,
-            usedSessions: 0,
-            remainingSessions: item.sessions,
-            serviceIds: serviceIds,
+            totalSessions,
+            usedSessionNumbers: [],
+            remainingSessions: totalSessions,
+            sessions,
             purchaseDate: new Date().toISOString(),
             orderId: orderId,
             isActive: true,
@@ -484,10 +508,6 @@ export function ModernSalesScreen() {
     const discountAmount = Math.round(subtotal * percent / 100);
     setOrderDiscount(discountAmount);
     playSound('beep');
-  };
-
-  const handleQuickPay = (amount: number) => {
-    setCustomerAmount(amount.toString());
   };
 
   // Handle apply voucher
@@ -1730,9 +1750,7 @@ export function ModernSalesScreen() {
                   <div>
                     <CardPaymentForm
                       amount={total}
-                      onSuccess={(data) => {
-                        handleCompletePayment();
-                      }}
+                      onSuccess={() => handleCompletePayment()}
                       onCancel={() => setPaymentMethod('cash')}
                     />
                   </div>
@@ -1744,9 +1762,7 @@ export function ModernSalesScreen() {
                       amount={total}
                       orderCode={`POS-${Date.now()}`}
                       paymentType={paymentMethod}
-                      onSuccess={(data) => {
-                        handleCompletePayment();
-                      }}
+                      onSuccess={() => handleCompletePayment()}
                       onCancel={() => setPaymentMethod('cash')}
                     />
                   </div>

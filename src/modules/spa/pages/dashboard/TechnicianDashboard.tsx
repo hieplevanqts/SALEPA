@@ -9,7 +9,7 @@ interface TechnicianDashboardProps {
 
 export function TechnicianDashboard({ currentUser }: TechnicianDashboardProps) {
   const { appointments, users } = useStore();
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
 
   // Get current technician
   const currentTechnician = useMemo(() => {
@@ -303,9 +303,9 @@ export function TechnicianDashboard({ currentUser }: TechnicianDashboardProps) {
                       </div>
                     </div>
 
-                    {apt.note && (
+                    {apt.notes && (
                       <div className="mt-3 text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
-                        <span className="font-medium">{language === 'vi' ? 'Ghi chú:' : 'Note:'}</span> {apt.note}
+                        <span className="font-medium">{language === 'vi' ? 'Ghi chú:' : 'Note:'}</span> {apt.notes}
                       </div>
                     )}
                   </div>

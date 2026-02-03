@@ -1,5 +1,5 @@
 // 5 ADDITIONAL SERVICES
-const additionalServices = [
+export const additionalServices = [
   {
     name: 'Massage cổ vai gáy 30 phút',
     price: 180000,
@@ -58,7 +58,7 @@ const additionalServices = [
 ];
 
 // 5 ADDITIONAL TREATMENTS with sessionDetails
-const additionalTreatments = [
+export const additionalTreatments = [
   // Indices 21-25 will be services (serv-21 to serv-25)
   // Indices 26-30 will be treatments (treat-26 to treat-30)
   {

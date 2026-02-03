@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { X, User, Phone, Mail, MapPin, Calendar, Edit, Trash2, Cake, Hash, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, Package, CheckCircle, XCircle, CircleDot, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Phone, MapPin, Calendar, Edit, Trash2, Cake, Hash, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, Package, CheckCircle, CircleDot, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
 import type { Customer } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
@@ -17,43 +17,60 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
   const [activeTab, setActiveTab] = useState<'orders' | 'treatments'>('treatments'); // Default to treatments tab
   const [expandedPackages, setExpandedPackages] = useState<string[]>([]);
   const [expandedSessions, setExpandedSessions] = useState<string[]>([]); // Track expanded sessions
+  const customerId = customer.id ?? customer._id;
+  const customerName = customer.name ?? customer.full_name;
+  const customerPhone = customer.phone ?? '';
+  const customerAvatar = customer.avatar ?? customer.metadata?.avatar;
+  const customerDateOfBirth = customer.dateOfBirth ?? customer.metadata?.dateOfBirth;
+  const customerGender = customer.gender ?? customer.metadata?.gender;
+  const customerNotes = customer.notes ?? customer.metadata?.notes;
+  const customerTaxCode = customer.taxCode ?? customer.tax_code;
+  const customerTotalSpent = customer.totalSpent ?? customer.total_spent ?? 0;
+  const customerOrderCount = customer.orderCount ?? customer.total_orders ?? 0;
+  const getTranslation = (key: string, fallback: string) => {
+    const value = t(key);
+    return value === key ? fallback : value;
+  };
+
+  // Get customer orders
+  const customerOrders = useMemo(() => {
+    let result = orders.filter((order) => order.customerPhone === customerPhone);
+
+    return result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [orders, customerPhone]);
+
+  // Get customer treatment packages
+  const customerPackages = useMemo(() => {
+    const packages = customerTreatmentPackages.filter((pkg) => pkg.customerId === customerId);
+    console.log('🔍 Debug Treatment Packages:', {
+      customerId,
+      customerName,
+      totalPackages: customerTreatmentPackages.length,
+      customerPackages: packages.length,
+      allPackages: customerTreatmentPackages.map((p) => ({
+        id: p.id,
+        customerId: p.customerId,
+        name: p.treatmentName,
+      })),
+      filtered: packages.map((p) => ({ id: p.id, name: p.treatmentName })),
+    });
+    return packages;
+  }, [customerTreatmentPackages, customerId, customerName]);
 
   // Auto-expand all packages when switching to treatments tab
   useEffect(() => {
     if (activeTab === 'treatments' && customerPackages.length > 0) {
-      // Auto-expand all packages
-      const allPackageIds = customerPackages.map(pkg => pkg.id);
+      const allPackageIds = customerPackages.map((pkg) => pkg.id);
       setExpandedPackages(allPackageIds);
-      console.log('📦 Auto-expanding all packages:', allPackageIds);
     }
-  }, [activeTab, customerPackages.length]);
-
-  // Get customer orders
-  const customerOrders = useMemo(() => {
-    let result = orders.filter((order) => order.customerPhone === customer.phone);
-    
-    return result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [orders, customer.phone]);
-
-  // Get customer treatment packages
-  const customerPackages = useMemo(() => {
-    const packages = customerTreatmentPackages.filter(pkg => pkg.customerId === customer.id);
-    console.log('🔍 Debug Treatment Packages:', {
-      customerId: customer.id,
-      customerName: customer.name,
-      totalPackages: customerTreatmentPackages.length,
-      customerPackages: packages.length,
-      allPackages: customerTreatmentPackages.map(p => ({ id: p.id, customerId: p.customerId, name: p.treatmentName })),
-      filtered: packages.map(p => ({ id: p.id, name: p.treatmentName }))
-    });
-    return packages;
-  }, [customerTreatmentPackages, customer.id]);
+  }, [activeTab, customerPackages]);
 
   // Get package appointments  
   const getPackageAppointments = (packageId: string) => {
-    return appointments.filter(apt => 
-      apt.customerId === customer.id &&
-      apt.services.some(s => s.treatmentPackageId === packageId)
+    return appointments.filter(
+      (apt) =>
+        apt.customerId === customerId &&
+        apt.services.some((s) => s.treatmentPackageId === packageId),
     );
   };
 
@@ -97,19 +114,19 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
       case 'acquaintance':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-            {t.customer?.acquaintance || 'Acquaintance'}
+            {t.customerData?.acquaintance || 'Acquaintance'}
           </span>
         );
       case 'employee':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            {t.customer?.employee || 'Employee'}
+            {t.customerData?.employee || 'Employee'}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-            {t.customer?.regular || 'Regular'}
+            {t.customerData?.regular || 'Regular'}
           </span>
         );
     }
@@ -158,9 +175,9 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
   };
 
   const isBirthday = () => {
-    if (!customer.dateOfBirth) return false;
+    if (!customerDateOfBirth) return false;
     const today = new Date();
-    const birthDate = new Date(customer.dateOfBirth);
+    const birthDate = new Date(customerDateOfBirth);
     return (
       today.getDate() === birthDate.getDate() &&
       today.getMonth() === birthDate.getMonth()
@@ -168,7 +185,8 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
   };
 
   const handleCallPhone = () => {
-    window.location.href = `tel:${customer.phone}`;
+    if (!customerPhone) return;
+    window.location.href = `tel:${customerPhone}`;
   };
 
   const getStatusBadge = (status?: string) => {
@@ -205,7 +223,7 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-semibold">{t.customer?.detailTitle || 'Customer Details'}</h2>
+          <h2 className="text-2xl font-semibold">{t.customerData?.detailTitle || 'Customer Details'}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -220,18 +238,18 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
             <div className="flex items-start gap-6">
               {/* Avatar */}
-              <div className={`w-24 h-24 rounded-full ${getAvatarColor(customer.name)} flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0`}>
-                {customer.avatar ? (
-                  <img src={customer.avatar} alt={customer.name} className="w-full h-full rounded-full object-cover" />
+              <div className={`w-24 h-24 rounded-full ${getAvatarColor(customerName)} flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0`}>
+                {customerAvatar ? (
+                  <img src={customerAvatar} alt={customerName} className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  getInitials(customer.name)
+                  getInitials(customerName)
                 )}
               </div>
 
               {/* Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-2xl font-bold text-gray-900">{customer.name}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900">{customerName}</h3>
                   {getCustomerGroupBadge(customer.customerGroup)}
                 </div>
 
@@ -239,12 +257,12 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
                   {/* Phone */}
                   <div className="flex items-center gap-2 text-gray-700">
                     <Phone className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium">{customer.phone}</span>
+                    <span className="font-medium">{customerPhone}</span>
                     <button
                       onClick={handleCallPhone}
                       className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
-                      {t.customer?.call || 'Call'}
+                      {t.customerData?.call || 'Call'}
                     </button>
                   </div>
 
@@ -257,47 +275,47 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
                   )}
 
                   {/* Date of Birth */}
-                  {customer.dateOfBirth && (
+                  {customerDateOfBirth && (
                     <div className="flex items-center gap-2 text-gray-700">
                       {isBirthday() ? (
                         <Cake className="w-5 h-5 text-pink-600" />
                       ) : (
                         <Calendar className="w-5 h-5 text-blue-600" />
                       )}
-                      <span>{formatDate(customer.dateOfBirth)}</span>
+                      <span>{formatDate(customerDateOfBirth)}</span>
                       {isBirthday() && (
                         <span className="text-xs bg-pink-100 text-pink-800 px-2 py-0.5 rounded-full">
-                          🎂 {t.customer?.birthday || 'Birthday Today'}
+                          🎂 {t.customerData?.birthday || 'Birthday Today'}
                         </span>
                       )}
                     </div>
                   )}
 
                   {/* Gender */}
-                  {customer.gender && (
+                  {customerGender && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <span className="text-blue-600">👤</span>
-                      <span>{(t.customer as any)?.[customer.gender] || customer.gender}</span>
+                      <span>{getTranslation(`customerData.${customerGender}`, customerGender)}</span>
                     </div>
                   )}
 
                   {/* Tax Code */}
-                  {customer.taxCode && (
+                  {customerTaxCode && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <Hash className="w-5 h-5 text-blue-600" />
-                      <span>{customer.taxCode}</span>
+                      <span>{customerTaxCode}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Notes */}
-                {customer.notes && (
+                {customerNotes && (
                   <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-yellow-900 mb-1">{t.customer?.notes || 'Notes'}</p>
-                        <p className="text-sm text-yellow-800">{customer.notes}</p>
+                        <p className="text-sm font-medium text-yellow-900 mb-1">{t.customerData?.notes || 'Notes'}</p>
+                        <p className="text-sm text-yellow-800">{customerNotes}</p>
                       </div>
                     </div>
                   </div>
@@ -307,11 +325,11 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
               {/* Stats */}
               <div className="text-right flex-shrink-0">
                 <div className="text-3xl font-bold text-blue-600">
-                  {customer.totalSpent.toLocaleString('vi-VN')}đ
+                  {customerTotalSpent.toLocaleString('vi-VN')}đ
                 </div>
-                <p className="text-sm text-gray-600 mt-1">{t.customer?.totalSpent || 'Total Spent'}</p>
+                <p className="text-sm text-gray-600 mt-1">{t.customerData?.totalSpent || 'Total Spent'}</p>
                 <div className="mt-2 text-lg font-semibold text-gray-900">
-                  {customer.orderCount} {t.customer?.orders || 'orders'}
+                  {customerOrderCount} {t.customerData?.orders || 'orders'}
                 </div>
               </div>
             </div>
@@ -446,10 +464,10 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
                   {/* Test Add Package Button */}
                   <button
                     onClick={() => {
-                      console.log('🧪 TEST: Adding test package for customer:', customer.id);
+                      console.log('🧪 TEST: Adding test package for customer:', customerId);
                       const testPackage = {
-                        customerId: customer.id,
-                        customerName: customer.name,
+                        customerId,
+                        customerName,
                         treatmentProductId: 'TEST-001',
                         treatmentName: 'TEST: Liệu trình test 5 buổi',
                         totalSessions: 5,
@@ -746,8 +764,7 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
                                                       <span className="inline-flex items-center">
                                                         <span className="font-medium">Loại:</span>
                                                         <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
-                                                          {item.productType === 'service' ? 'Dịch vụ' : 
-                                                           item.productType === 'treatment' ? 'Liệu trình' : 'Sản phẩm'}
+                                                          {item.productType === 'service' ? 'Dịch vụ' : 'Sản phẩm'}
                                                         </span>
                                                       </span>
                                                       {item.duration && (
@@ -844,14 +861,14 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
             className="px-6 py-2.5 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
           >
             <Trash2 className="w-5 h-5" />
-            {t.customer?.delete || 'Delete'}
+            {t.customerData?.delete || 'Delete'}
           </button>
           <button
             onClick={onEdit}
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
             <Edit className="w-5 h-5" />
-            {t.customer?.edit || 'Edit'}
+            {t.customerData?.edit || 'Edit'}
           </button>
         </div>
       </div>

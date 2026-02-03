@@ -4,11 +4,7 @@
 // =====================================================
 
 import { mockProductService } from './mockProductService';
-import {
-  Product,
-  ProductVariant,
-  CreateProductFlow,
-} from './productDataModel';
+import type { Product, CreateProductFlow } from './productDataModel';
 
 // =====================================================
 // EXAMPLE 1: Tạo sản phẩm CÓ PHÂN LOẠI

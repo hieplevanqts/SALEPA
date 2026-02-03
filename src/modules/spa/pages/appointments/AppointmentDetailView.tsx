@@ -1,5 +1,4 @@
-import { ArrowLeft, Calendar, Clock, User, Phone, Scissors, FileText, Edit, Trash2, CheckCircle, AlertCircle, XCircle, Package, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
-import { useTranslation } from '../../../../lib/spa-lib/useTranslation';
+import { ArrowLeft, Calendar, Clock, User, Scissors, FileText, Edit, Trash2, CheckCircle, AlertCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AppSidebar } from '../../components/shared/AppSidebar';
 import { useStore } from '../../../../lib/spa-lib/store';
@@ -16,7 +15,6 @@ interface AppointmentDetailViewProps {
 type TabType = 'details' | 'services';
 
 export function AppointmentDetailView({ appointment, onClose, onEdit, onDelete, userRole = 'admin' }: AppointmentDetailViewProps) {
-  const { t } = useTranslation();
   const { customers, products, users, customerTreatmentPackages } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('details');
   const [expandedSessions, setExpandedSessions] = useState<Record<number, boolean>>({});
@@ -36,7 +34,6 @@ export function AppointmentDetailView({ appointment, onClose, onEdit, onDelete, 
   const technician = users.find(u => u.username === appointment.technicianId);
 
   // Calculate total price and duration
-  const totalPrice = appointment.services.reduce((sum, s) => sum + (s.price * (s.quantity || 1)), 0);
   const totalDuration = appointment.services.reduce((sum, s) => sum + s.duration, 0);
 
   const getStatusBadge = (status: string) => {
@@ -227,12 +224,12 @@ export function AppointmentDetailView({ appointment, onClose, onEdit, onDelete, 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gray-50 rounded-xl p-4">
                         <div className="text-sm text-gray-600 mb-1">Ngày hẹn</div>
-                        <div className="font-semibold text-gray-900 text-base">{formatDate(appointment.date)}</div>
+                        <div className="font-semibold text-gray-900 text-base">{formatDate(appointment.appointmentDate)}</div>
                       </div>
                       
                       <div className="bg-gray-50 rounded-xl p-4">
                         <div className="text-sm text-gray-600 mb-1">Giờ hẹn</div>
-                        <div className="font-semibold text-gray-900 text-base">{formatTime(appointment.time)}</div>
+                        <div className="font-semibold text-gray-900 text-base">{formatTime(appointment.startTime)}</div>
                       </div>
 
                       {totalDuration && (
@@ -245,7 +242,7 @@ export function AppointmentDetailView({ appointment, onClose, onEdit, onDelete, 
                       <div className="bg-gray-50 rounded-xl p-4">
                         <div className="text-sm text-gray-600 mb-1">Ngày tạo</div>
                         <div className="font-semibold text-gray-900 text-base">
-                          {new Date(appointment.createdAt || appointment.date).toLocaleDateString('vi-VN')}
+                          {new Date(appointment.createdAt || appointment.appointmentDate).toLocaleDateString('vi-VN')}
                         </div>
                       </div>
                     </div>
@@ -292,7 +289,7 @@ export function AppointmentDetailView({ appointment, onClose, onEdit, onDelete, 
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="text-sm text-gray-600 mb-1">Tên kỹ thuật viên</div>
                           <div className="font-semibold text-gray-900 text-base">
-                            {technician?.name || appointment.technicianName || appointment.technicianId}
+                            {technician?.fullName || appointment.technicianName || appointment.technicianId}
                           </div>
                         </div>
 
@@ -389,8 +386,6 @@ export function AppointmentDetailView({ appointment, onClose, onEdit, onDelete, 
                               <div className="border-t-2 border-purple-200 bg-white p-4">
                                 <div className="space-y-4">
                                   {servicesInSession.map((service, serviceIndex) => {
-                                    const productDetail = products.find(p => p.id === service.productId);
-                                    
                                     return (
                                       <div key={serviceIndex} className={`${serviceIndex > 0 ? 'pt-4 border-t border-gray-200' : ''}`}>
                                         {/* Service/Product header */}
@@ -474,10 +469,10 @@ export function AppointmentDetailView({ appointment, onClose, onEdit, onDelete, 
                                 </div>
                               )}
 
-                              {productDetail?.sku && (
+                              {productDetail?.barcode && (
                                 <div className="bg-gray-50 rounded-xl p-4 md:col-span-2">
-                                  <div className="text-sm text-gray-600 mb-1">Mã sản phẩm (SKU)</div>
-                                  <div className="font-mono text-gray-900 text-base">{productDetail.sku}</div>
+                                  <div className="text-sm text-gray-600 mb-1">Mã sản phẩm</div>
+                                  <div className="font-mono text-gray-900 text-base">{productDetail.barcode}</div>
                                 </div>
                               )}
 

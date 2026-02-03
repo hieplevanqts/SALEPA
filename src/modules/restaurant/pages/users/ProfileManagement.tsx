@@ -9,7 +9,7 @@ interface ProfileManagementProps {
 }
 
 export function ProfileManagement({ onClose, view }: ProfileManagementProps) {
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const { selectedIndustry } = useStore();
   
   // Get current user info
