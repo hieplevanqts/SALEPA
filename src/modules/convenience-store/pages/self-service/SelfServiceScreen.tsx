@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
+import type { Product, SelectedOption } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { 
-  QrCode, ShoppingBag, Plus, Minus, Trash2, Check, X, 
+  QrCode, ShoppingBag, Check, X, 
   ChevronRight, MapPin, User, Phone, MessageSquare, Coffee,
   Utensils, PackageOpen, Sparkles, Clock, Star, Languages, ClipboardList
 } from 'lucide-react';
@@ -24,7 +25,6 @@ export function SelfServiceScreen() {
     categories,
     currentTable,
     setCurrentTable,
-    clearCart,
     language,
     setLanguage,
     selfServiceOrders,
@@ -62,7 +62,8 @@ export function SelfServiceScreen() {
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     const isActive = product.status === 1; // Only active products
-    return matchesCategory && product.stock > 0 && isActive;
+    const stock = product.stock ?? product.quantity ?? 0;
+    return matchesCategory && stock > 0 && isActive;
   });
 
   // Get current order
@@ -94,7 +95,7 @@ export function SelfServiceScreen() {
     const product = products.find(p => p.id === productId);
     if (product) {
       // Always add directly with default options
-      const productToAdd = { ...product };
+      const productToAdd = { ...product } as Product & { selectedOptions?: SelectedOption[] };
       
       // If product has required options, use first choice as default
       if (product.options && product.options.length > 0) {
@@ -358,7 +359,7 @@ export function SelfServiceScreen() {
               <div>
                 <h1 className="text-2xl font-bold">{t('selfService')}</h1>
                 <p className="text-sm text-blue-100">
-                  {currentTable?.name} • {currentTable?.type === 'dine-in' ? t('dineIn') : t('takeaway')}
+                  {currentTable?.name} • {orderType === 'dine-in' ? t('dineIn') : t('takeaway')}
                 </p>
               </div>
             </div>
@@ -587,7 +588,6 @@ export function SelfServiceScreen() {
                       item={item}
                       onUpdateQuantity={updateCartQuantity}
                       onRemove={removeFromCart}
-                      compact
                     />
                   ))
                 )}

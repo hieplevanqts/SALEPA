@@ -301,6 +301,7 @@ export default function StockOutManagement() {
   const handleAddProduct = (productId: string) => {
     const product = stockProducts.find(p => p.id === productId);
     if (!product) return;
+    const costPrice = product.costPrice ?? 0;
     
     // Check if already in list
     const existingIndex = formItems.findIndex(item => item.productId === productId);
@@ -308,6 +309,7 @@ export default function StockOutManagement() {
       // Just increase quantity
       const newItems = [...formItems];
       newItems[existingIndex].quantity += 1;
+      newItems[existingIndex].totalPrice = newItems[existingIndex].quantity * (newItems[existingIndex].costPrice || 0);
       setFormItems(newItems);
     } else {
       // Add new
@@ -315,6 +317,8 @@ export default function StockOutManagement() {
         productId: product.id,
         productName: product.name,
         quantity: 1,
+        costPrice,
+        totalPrice: costPrice,
       };
       setFormItems([...formItems, newItem]);
     }
@@ -329,6 +333,7 @@ export default function StockOutManagement() {
     if (quantity <= 0) return;
     const newItems = [...formItems];
     newItems[index].quantity = quantity;
+    newItems[index].totalPrice = quantity * (newItems[index].costPrice || 0);
     setFormItems(newItems);
   };
   
@@ -354,8 +359,9 @@ export default function StockOutManagement() {
     const receiptData = {
       date: formDate,
       reason: formReason,
+      staffName: currentUser?.fullName || currentUser?.username || 'Hệ thống',
       items: formItems,
-      totalQuantity: formItems.reduce((sum, item) => sum + item.quantity, 0),
+      totalAmount: formItems.reduce((sum, item) => sum + (item.totalPrice || item.costPrice * item.quantity), 0),
       notes: formNotes,
     };
     
@@ -568,7 +574,7 @@ export default function StockOutManagement() {
                         {receipt.items.length}
                       </td>
                       <td className="table-content text-center">
-                        <span className="font-semibold">{receipt.totalQuantity}</span>
+                        <span className="font-semibold">{receipt.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
                       </td>
                       <td className="table-content">
                         {receipt.createdBy}
@@ -707,7 +713,7 @@ export default function StockOutManagement() {
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-gray-900">Tổng số lượng xuất:</span>
                     <span className="font-bold text-2xl" style={{ color: '#FE7410' }}>
-                      {viewingReceipt.totalQuantity}
+                      {viewingReceipt.items.reduce((sum, item) => sum + item.quantity, 0)}
                     </span>
                   </div>
                 </div>

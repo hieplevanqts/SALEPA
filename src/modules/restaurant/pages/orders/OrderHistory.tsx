@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Calendar, CreditCard, Eye, Trash2, Download, Printer, X, ArrowUpDown, ChevronDown, Package, ShoppingBag, TrendingUp, CheckCircle, Receipt, AlertCircle, ArrowUp, ArrowDown, DollarSign, Smartphone, QrCode, Zap, Check, Banknote, Edit2, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Calendar, CreditCard, Eye, Trash2, Printer, X, ArrowUpDown, ChevronDown, Package, ShoppingBag, TrendingUp, CheckCircle, AlertCircle, ArrowUp, ArrowDown, DollarSign, Smartphone, QrCode, Zap, Check, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { OrderDetailFullScreen } from './OrderDetailFullScreen';
@@ -13,24 +13,17 @@ type SortOrder = 'asc' | 'desc';
 type PaymentMethodType = 'cash' | 'card' | 'transfer' | 'momo' | 'zalopay' | 'vnpay';
 
 interface OrderHistoryProps {
-  onEditOrder?: () => void;
   onShowProfileMenu?: () => void;
 }
 
-export function OrderHistory({ onEditOrder, onShowProfileMenu }: OrderHistoryProps = {}) {
-  const { orders: ordersRaw, selfServiceOrders: selfServiceOrdersRaw, deleteOrder, updateOrder, setEditingOrder, selectedIndustry } = useStore();
+export function OrderHistory({ onShowProfileMenu }: OrderHistoryProps = {}) {
+  const { orders: ordersRaw, deleteOrder, updateOrder, selectedIndustry } = useStore();
   const { t } = useTranslation();
-  
-  // Check if F&B industry
-  const isFoodBeverage = selectedIndustry === 'food-beverage';
   
   // Normalize orders to arrays (handle persisted object format)
   const orders = Array.isArray(ordersRaw)
     ? ordersRaw
     : (Object.values(ordersRaw || {}) as Order[]);
-  const selfServiceOrders = Array.isArray(selfServiceOrdersRaw)
-    ? selfServiceOrdersRaw
-    : (Object.values(selfServiceOrdersRaw || {}) as Order[]);
   
   console.log('OrderHistory - orders:', orders.length);
   console.log('OrderHistory - ordersRaw:', ordersRaw);
@@ -39,7 +32,6 @@ export function OrderHistory({ onEditOrder, onShowProfileMenu }: OrderHistoryPro
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
-  const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [filterDate, setFilterDate] = useState('all');
   const [filterPayment, setFilterPayment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -150,11 +142,6 @@ export function OrderHistory({ onEditOrder, onShowProfileMenu }: OrderHistoryPro
     currentPage * itemsPerPage
   );
 
-  // Reset to page 1 when filters change
-  const handleFilterChange = () => {
-    setCurrentPage(1);
-  };
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -196,32 +183,6 @@ export function OrderHistory({ onEditOrder, onShowProfileMenu }: OrderHistoryPro
       setSortField(field);
       setSortOrder('desc');
     }
-  };
-
-  const handleExportCSV = () => {
-    const headers = ['Order ID', 'Date', 'Customer', 'Phone', 'Payment', 'Items', 'Subtotal', 'Discount', 'Total'];
-    const rows = filteredOrders.map(order => [
-      order.orderNumber || order.id,
-      new Date(order.date).toLocaleString('vi-VN'),
-      order.customerName || t.walkInCustomer,
-      order.customerPhone || '',
-      order.paymentMethod,
-      Array.isArray(order.items) ? order.items.length : Object.keys(order.items || {}).length,
-      order.subtotal,
-      order.discount,
-      order.total
-    ]);
-    
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
   };
 
   const formatDate = (dateString: string) => {

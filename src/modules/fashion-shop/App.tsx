@@ -1,5 +1,4 @@
 import FashionShopRouter from './router/index'
-import { useModuleCss } from '../../utils/useModuleCss'
 
 export default function FashionShopApp() {
   // useModuleCss([

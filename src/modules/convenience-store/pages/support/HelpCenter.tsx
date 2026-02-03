@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { 
-  X, Book, Video, Keyboard, HelpCircle, Lightbulb, CheckCircle,
+  X, Book, Video, Keyboard, HelpCircle, Lightbulb,
   Play, Search, ChevronRight, MessageCircle, Phone, Mail,
   FileText, Download, ExternalLink, Zap, ShoppingCart, Package,
-  BarChart3, Clock, Settings, Users, AlertCircle
+  BarChart3
 } from 'lucide-react';
 
 interface HelpCenterProps {

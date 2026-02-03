@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../../../lib/fashion-shop-lib/store';
 import { useTranslation } from '../../../../lib/fashion-shop-lib/useTranslation';
-import { MessageSquare, Send, Clock, User, ShoppingBag } from 'lucide-react';
+import { MessageSquare, Send, ShoppingBag } from 'lucide-react';
 import type { SelfServiceOrder } from '../../../../lib/fashion-shop-lib/store';
 
 interface MessageInboxProps {
@@ -40,10 +40,9 @@ export function MessageInbox({ onOrderClick }: MessageInboxProps) {
     if (!selectedOrderId || !replyText.trim()) return;
 
     addMessageToOrder(selectedOrderId, {
-      id: Date.now().toString(),
       sender: 'staff',
-      text: replyText.trim(),
-      timestamp: new Date().toISOString(),
+      senderName: t('staff') || 'Staff',
+      message: replyText.trim(),
     });
 
     setReplyText('');
@@ -154,7 +153,7 @@ export function MessageInbox({ onOrderClick }: MessageInboxProps) {
 
                 <p className={`text-sm ${isUnread ? 'text-blue-900 font-medium' : 'text-gray-600'} line-clamp-2`}>
                   {lastMsg?.sender === 'customer' ? '👤 ' : '👨‍💼 '}
-                  {lastMsg?.text}
+                  {lastMsg?.message}
                 </p>
 
                 <button
@@ -227,7 +226,7 @@ export function MessageInbox({ onOrderClick }: MessageInboxProps) {
                         : 'bg-white border border-gray-200 text-gray-900'
                     }`}
                   >
-                    <p className="text-sm">{message.text}</p>
+                    <p className="text-sm">{message.message}</p>
                     <div
                       className={`text-xs mt-1 ${
                         isStaff ? 'text-blue-100' : 'text-gray-500'

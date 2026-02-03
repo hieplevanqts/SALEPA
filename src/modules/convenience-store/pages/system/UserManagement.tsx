@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../../../../lib/convenience-store-lib/store';
-import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { 
   Search, Filter, Plus, Edit, Trash2, Key, Power, 
-  UserCircle, Mail, Phone, Shield, ShieldCheck, Wrench,
+  UserCircle, Mail, Phone, Shield,
   AlertCircle, Eye, EyeOff, X, Check
 } from 'lucide-react';
 import type { User } from '../../../../lib/convenience-store-lib/store';
@@ -11,7 +10,6 @@ import { Pagination } from '../../components/pagination/Pagination';
 
 export function UserManagement() {
   const { users, createUser, updateUser, deleteUser, toggleUserStatus, changeUserPassword } = useStore();
-  const { t } = useTranslation();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | string>('all');

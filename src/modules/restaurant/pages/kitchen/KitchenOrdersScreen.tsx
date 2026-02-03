@@ -1,6 +1,6 @@
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { useState, useEffect, useMemo, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { useCrossTabSync } from '../../../../lib/restaurant-lib/useCrossTabSync';
@@ -14,7 +14,6 @@ import {
   Flame, 
   ShoppingBag, 
   ChevronRight, 
-  GripVertical,
   UtensilsCrossed,
   ChevronDown,
   FileText,
@@ -189,7 +188,7 @@ export default function KitchenOrdersScreen() {
   };
 
   // Render order card
-  const renderOrderCard = (order: KitchenOrder, showActions: boolean = true) => {
+  const renderOrderCard = (order: KitchenOrder) => {
     return (
       <DraggableOrderCard
         key={order.id}

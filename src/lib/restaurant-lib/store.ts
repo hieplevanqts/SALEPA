@@ -179,6 +179,9 @@ export interface KitchenOrder {
   servedAt?: string; // When order was served to customer
   customerName?: string;
   isAdditionalOrder?: boolean; // TRUE = Món gọi bổ sung sau khi đã thông báo lần đầu
+  // Legacy UI fields
+  itemsCompleted?: string[];
+  completedTime?: number;
 }
 
 export interface Shift {

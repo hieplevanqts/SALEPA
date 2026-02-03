@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { 
-  Coffee, Sparkles, Shirt, ShoppingBag, Smartphone, Heart,
+  ShoppingBag,
   Check, ArrowRight, ChevronRight
 } from 'lucide-react';
 

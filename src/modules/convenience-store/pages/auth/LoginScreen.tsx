@@ -3,8 +3,8 @@ import { Eye, EyeOff, Lock, Mail, User, ArrowRight, CheckCircle2, X } from 'luci
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import logoImage from '../../../../assets/5674d75012c6e5648856a4090ea134ccbacf662e.png';
 
-type UserRole = 'admin' | 'cashier' | 'technician';
-interface LoginPayload {
+export type UserRole = 'admin' | 'cashier' | 'technician';
+export interface LoginPayload {
   username: string;
   password?: string;
   rememberMe: boolean;

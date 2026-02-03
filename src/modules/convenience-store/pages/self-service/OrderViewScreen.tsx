@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Clock, MessageSquare, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, MapPin, MessageSquare, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { ChatBox } from '../../components/chat/ChatBox';
 import type { SelfServiceOrder } from '../../../../lib/convenience-store-lib/store';

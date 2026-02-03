@@ -1,4 +1,4 @@
-import { DollarSign, Package, CheckCircle, XCircle, CreditCard, Printer, ChevronDown, Users, MessageSquare, X, Clock, Phone, Calendar, ShoppingBag, FileText, Edit, Trash2, ArrowLeft, Smartphone, QrCode, Zap, Check, Banknote, Languages, AlertTriangle, TrendingDown, TrendingUp, XOctagon, Receipt } from 'lucide-react';
+import { DollarSign, CreditCard, Printer, Users, X, Clock, Phone, ShoppingBag, FileText, Edit, Trash2, ArrowLeft, Smartphone, QrCode, Zap, Check, Banknote, AlertTriangle, TrendingDown, XOctagon } from 'lucide-react';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { useEffect, useState } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
@@ -18,9 +18,9 @@ interface OrderDetailFullScreenProps {
 
 type PaymentMethodType = 'cash' | 'card' | 'transfer' | 'momo' | 'zalopay' | 'vnpay';
 
-export function OrderDetailFullScreen({ order: orderProp, onClose, onCollectPayment, onPrintReceipt, onEdit, onDelete, onShowProfileMenu, showWithSidebar }: OrderDetailFullScreenProps) {
+export function OrderDetailFullScreen({ order: orderProp, onClose, onPrintReceipt, onEdit, onDelete, showWithSidebar }: OrderDetailFullScreenProps) {
   const { t } = useTranslation();
-  const { updateOrder, language, setLanguage, autoServeKitchenOrderOnPayment, orders } = useStore();
+  const { updateOrder, autoServeKitchenOrderOnPayment, orders } = useStore();
   
   // 🔥 IMPORTANT: Get fresh order from store to ensure orderHistory is up-to-date
   const order = orders.find(o => o.id === orderProp.id) || orderProp;
@@ -30,11 +30,8 @@ export function OrderDetailFullScreen({ order: orderProp, onClose, onCollectPaym
   const isUnderPaid = receivedAmount < order.total;
   
   // Display amount: if paid more than total, show total; otherwise show actual amount
-  const displayReceivedAmount = receivedAmount > order.total ? order.total : receivedAmount;
-
   // Get current user info from localStorage
   const currentUser = localStorage.getItem('salepa_username') || '';
-  const userRole = (localStorage.getItem('salepa_userRole') as 'admin' | 'cashier' | 'technician') || 'admin';
 
   // Payment modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -47,9 +44,6 @@ export function OrderDetailFullScreen({ order: orderProp, onClose, onCollectPaym
 
   // Calculate remaining amount to pay
   const remainingAmount = order.total - receivedAmount;
-
-  // Calculate change
-  const change = customerAmount ? parseFloat(customerAmount) - remainingAmount : 0;
 
   const paymentMethods = [
     { id: 'cash' as const, label: t.cash || 'Tiền mặt', icon: Banknote },

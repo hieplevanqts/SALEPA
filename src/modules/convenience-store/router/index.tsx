@@ -1,4 +1,5 @@
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { useStore } from '../../../lib/convenience-store-lib/store';
 
 import MainLayout from "../layouts/ModuleLayout";
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -16,8 +17,8 @@ import CashierView from "../pages/cashier/CashierView";
 import HelpCenter from "../pages/support/HelpCenter";
 import ProfileMenu from "../components/profile/ProfileMenu";
 import OnboardingScreen from "../pages/onboarding/OnboardingScreen";
-import IndustrySelection from "../pages/system/IndustrySelection";
-import LoginScreen from "../pages/auth/LoginScreen";
+import IndustrySelection, { type IndustryType } from "../pages/system/IndustrySelection";
+import LoginScreen, { type LoginPayload } from "../pages/auth/LoginScreen";
 import CustomerManagement from "../pages/customers/CustomerManagement";
 import UserManagement from "../pages/system/UserManagement";
 import RoleGroupManagement from "../pages/system/RoleGroupManagement";
@@ -31,6 +32,7 @@ import Forbidden403 from "../pages/errors/Forbidden403";
 import NotFound404 from "../pages/errors/NotFound404";
 export default function ConvenienceStoreRouter() {
     const navigate = useNavigate();
+    const { orders: ordersRaw } = useStore();
     const handleLogin = (payload: LoginPayload) => {
         console.log('LOGIN', payload);
 
@@ -41,6 +43,38 @@ export default function ConvenienceStoreRouter() {
         } else if (payload.role === 'cashier') {
             navigate('/convenience/sales');
         }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('auth');
+        navigate('/convenience/login');
+    };
+
+    const handleClose = () => {
+        navigate(-1);
+    };
+
+    const handleOnboardingComplete = () => {
+        navigate('/convenience/');
+    };
+
+    const handleIndustrySelect = (industry: IndustryType) => {
+        localStorage.setItem('salepa_industry', industry);
+        navigate('/convenience/');
+    };
+
+    const handleIndustrySkip = () => {
+        navigate('/convenience/');
+    };
+
+    const OrderDetailRoute = () => {
+        const { id } = useParams();
+        const orders = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
+        const order = orders.find((o) => o.id === id);
+        if (!order) {
+            return <NotFound404 />;
+        }
+        return <OrderDetailFullScreen order={order} onClose={handleClose} />;
     };
     return (
         <Routes>
@@ -59,7 +93,7 @@ export default function ConvenienceStoreRouter() {
                         <Route path="reports" element={<Reports />} />
                         <Route path="reports/:type" element={<Reports />} />
                         <Route path="settings" element={<Settings />} />
-                        <Route path="industry-selection" element={<IndustrySelection />} />
+                        <Route path="industry-selection" element={<IndustrySelection onSelect={handleIndustrySelect} onSkip={handleIndustrySkip} />} />
 
 
                         <Route index element={<Dashboard />} />
@@ -87,12 +121,12 @@ export default function ConvenienceStoreRouter() {
                         <Route path="reports/:type" element={<Reports />} />
 
                         <Route path="settings" element={<Settings />} />
-                        <Route path="help" element={<HelpCenter />} />
-                        <Route path="profile" element={<ProfileMenu />} />
+                        <Route path="help" element={<HelpCenter onClose={handleClose} />} />
+                        <Route path="profile" element={<ProfileMenu onClose={handleClose} onLogout={handleLogout} />} />
 
                         {/* Onboarding / Auth */}
-                        <Route path="onboarding" element={<OnboardingScreen />} />
-                        <Route path="industry-selection" element={<IndustrySelection />} />
+                        <Route path="onboarding" element={<OnboardingScreen onComplete={handleOnboardingComplete} onSkip={handleOnboardingComplete} />} />
+                        <Route path="industry-selection" element={<IndustrySelection onSelect={handleIndustrySelect} onSkip={handleIndustrySkip} />} />
 
                         {/* Debug */}
 
@@ -103,7 +137,7 @@ export default function ConvenienceStoreRouter() {
                         <Route path="debug" element={<DebugPackageLoader />} />
                         <Route path="sales" element={<ModernSalesScreen />} />
                         <Route path="orders" element={<OrderHistory />} />
-                        <Route path="orders/detail/:id" element={<OrderDetailFullScreen />} />
+                        <Route path="orders/detail/:id" element={<OrderDetailRoute />} />
                         <Route path="customers" element={<CustomerManagement />} />
                         <Route path="products" element={<ProductManagement />} />
                         <Route path="inventory/stock-in" element={<StockInManagement />} />
@@ -111,7 +145,7 @@ export default function ConvenienceStoreRouter() {
                     </Route>
 
                     {/* ========== PUBLIC INSIDE LAYOUT (OPTIONAL) ========== */}
-                    <Route path="help" element={<HelpCenter />} />
+                    <Route path="help" element={<HelpCenter onClose={handleClose} />} />
                     {/* ERROR */}
                     <Route path="403" element={<Forbidden403 />} />
                     <Route path="*" element={<NotFound404 />} />

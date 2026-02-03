@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
-import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
   List, LayoutGrid, Clock, User, MapPin, ShoppingBag, 
-  Truck, Check, ChefHat, AlertCircle, Package, Search, X
+  Truck, ChefHat, AlertCircle, Package, Search, X
 } from 'lucide-react';
 import type { Order } from '../../../../lib/restaurant-lib/store';
 
@@ -19,8 +18,7 @@ interface OrderWithStatus extends Order {
 }
 
 export default function KitchenView() {
-  const { kitchenOrders, updateKitchenOrder, deleteKitchenOrder } = useStore();
-  const { t } = useTranslation();
+  const { kitchenOrders, updateKitchenOrder } = useStore();
   
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [ordersWithStatus, setOrdersWithStatus] = useState<OrderWithStatus[]>([]);
@@ -35,8 +33,6 @@ export default function KitchenView() {
     setOrdersWithStatus(prevOrders => {
       const enrichedOrders: OrderWithStatus[] = kitchenOrders
         .map(kitchenOrder => {
-          const existing = prevOrders.find(o => o.id === kitchenOrder.orderId);
-          
           // Convert KitchenOrder to OrderWithStatus format
           return {
             id: kitchenOrder.orderId,
@@ -49,7 +45,7 @@ export default function KitchenView() {
             status: 'completed' as const,
             paymentMethod: 'cash' as const,
             kitchenStatus: kitchenOrder.status,
-            itemsCompleted: kitchenOrder.itemsCompleted,
+            itemsCompleted: kitchenOrder.itemsCompleted || [],
             startTime: kitchenOrder.startTime,
             completedTime: kitchenOrder.completedTime,
             orderType: kitchenOrder.orderType,
@@ -201,7 +197,7 @@ export default function KitchenView() {
         o.id.toLowerCase().includes(searchLower) ||
         (o.customerName && o.customerName.toLowerCase().includes(searchLower)) ||
         (o.tableNumber && o.tableNumber.toString().includes(searchLower)) ||
-        o.cart?.some(item => item.name.toLowerCase().includes(searchLower))
+        o.items.some((item) => item.name.toLowerCase().includes(searchLower))
       );
     }
     
@@ -226,7 +222,7 @@ export default function KitchenView() {
         o.id.toLowerCase().includes(searchLower) ||
         (o.customerName && o.customerName.toLowerCase().includes(searchLower)) ||
         (o.tableNumber && o.tableNumber.toString().includes(searchLower)) ||
-        o.cart?.some(item => item.name.toLowerCase().includes(searchLower));
+        o.items.some((item) => item.name.toLowerCase().includes(searchLower));
       
       if (!matchesSearch) return false;
     }
@@ -251,7 +247,7 @@ export default function KitchenView() {
   const OrderCard = ({ order }: { order: OrderWithStatus }) => {
     const typeInfo = getOrderTypeInfo(order);
     const statusButton = getStatusButton(order.kitchenStatus);
-    const totalItems = order.cart?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+    const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-3">
@@ -296,7 +292,7 @@ export default function KitchenView() {
 
         {/* Items List */}
         <div className="space-y-2 border-t border-gray-200 pt-3">
-          {order.cart?.map((item, index) => {
+          {order.items.map((item, index) => {
             const isCompleted = order.itemsCompleted.includes(item.id + index);
             return (
               <div key={item.id + index} className="flex items-start gap-3">
@@ -647,7 +643,7 @@ export default function KitchenView() {
                   {paginatedOrders.map(order => {
                     const typeInfo = getOrderTypeInfo(order);
                     const statusButton = getStatusButton(order.kitchenStatus);
-                    const totalItems = order.cart?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+                    const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
                     
                     return (
                       <tr key={order.id} className="hover:bg-gray-50">
