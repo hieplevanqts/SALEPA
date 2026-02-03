@@ -1,8 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { PackageMinus, Plus, Search, Trash2, X, Printer, ChevronLeft, ChevronRight, ShoppingCart, Receipt, Eye, Edit, AlertTriangle, Calendar, ChevronDown } from 'lucide-react';
+import { PackageMinus, Plus, Search, Trash2, X, ChevronLeft, ChevronRight, Eye, Edit, AlertTriangle, Calendar, ChevronDown } from 'lucide-react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import type { StockOutItem, StockOutReceipt } from '../../../../lib/restaurant-lib/store';
-import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
 
 const STOCK_OUT_REASONS = {
@@ -15,7 +14,6 @@ const STOCK_OUT_REASONS = {
 } as const;
 
 export default function StockOutManagement() {
-  const { t } = useTranslation();
   const { products, stockOutReceipts, createStockOutReceipt, updateStockOutReceipt, deleteStockOutReceipt, currentUser } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);

@@ -1,14 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
-import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
-import { Package, Plus, Search, Filter, Calendar, Eye, Edit, Trash2, X, Save, FileDown, Printer, ChevronLeft, ChevronRight, ChevronDown, Copy } from 'lucide-react';
-import { toast } from 'sonner';
+import { Package, Plus, Search, Calendar, Eye, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import type { StockInReceipt, StockInItem } from '../../../../lib/restaurant-lib/store';
 import { Pagination } from '../../components/common/Pagination';
 
 export default function StockInManagement() {
-  const { t } = useTranslation();
-  const { products, stockInReceipts, createStockInReceipt, updateStockInReceipt, deleteStockInReceipt, currentUser, suppliers } = useStore();
+  const { products, stockInReceipts, createStockInReceipt, updateStockInReceipt, deleteStockInReceipt, suppliers } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<StockInReceipt | null>(null);

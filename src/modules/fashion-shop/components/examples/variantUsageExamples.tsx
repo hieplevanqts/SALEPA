@@ -1,14 +1,20 @@
+// @ts-nocheck
 // =====================================================
 // EXAMPLE: Sử dụng variantUtils trong ProductForm
 // =====================================================
 
+import { useState } from 'react';
 import { 
   generateSKU, 
   generateVariantTitle, 
   generateFullProductName,
   calculateTotalStock,
-  countUniqueVariants 
+  countUniqueVariants,
+  calculateAvailableQuantity,
+  formatStockWithConversion
 } from '../../../../lib/fashion-shop-lib/variantUtils';
+
+const api = {} as any;
 
 // =====================================================
 // CASE 1: Lưu sản phẩm mới
@@ -176,8 +182,6 @@ function CartItem({ item }: { item: any }) {
 // =====================================================
 // CASE 5: Hiển thị trong quản lý kho
 // =====================================================
-
-import { calculateAvailableQuantity, formatStockWithConversion } from '@/lib/variantUtils';
 
 function InventoryTable({ products }: { products: any[] }) {
   return (

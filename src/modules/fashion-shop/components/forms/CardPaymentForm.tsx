@@ -1,6 +1,3 @@
-import { useTranslation } from '../../../../lib/fashion-shop-lib/useTranslation';
-import { CreditCard, Lock, CheckCircle, AlertCircle } from 'lucide-react';
-
 interface CardPaymentFormProps {
   amount: number;
   onSuccess: (cardData: CardData) => void;
@@ -15,8 +12,11 @@ export interface CardData {
   cardType: 'visa' | 'mastercard' | 'amex' | 'unknown';
 }
 
-export function CardPaymentForm({ amount, onSuccess, onCancel }: CardPaymentFormProps) {
-  const { t } = useTranslation();
+export function CardPaymentForm(props: CardPaymentFormProps) {
+  const { amount, onSuccess, onCancel } = props;
+  void amount;
+  void onSuccess;
+  void onCancel;
 
   return (
     <div className="py-8">

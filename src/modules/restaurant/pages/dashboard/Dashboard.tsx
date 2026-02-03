@@ -1,4 +1,5 @@
 import { useStore } from '../../../../lib/restaurant-lib/store';
+import type { Order } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { ShoppingBag, TrendingUp, Package, DollarSign, AlertTriangle, Clock, Calendar, X } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -31,17 +32,13 @@ export function Dashboard() {
   }
 
   // Normalize orders to array (handle persisted object format)
-  const ordersArray = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
+  const ordersArray: Order[] = Array.isArray(ordersRaw)
+    ? ordersRaw
+    : (Object.values(ordersRaw || {}) as Order[]);
   
   // Filter out invalid orders and ensure all properties are primitives
   const orders = ordersArray.filter((order) => {
-    return (
-      order &&
-      typeof order === 'object' &&
-      order.id &&
-      order.total !== undefined &&
-      order.date
-    );
+    return order && order.id && order.total !== undefined && order.date;
   });
 
   // Safely extract currentShift properties
@@ -501,12 +498,20 @@ export function Dashboard() {
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [
-                  chartPeriod === '6m' || chartPeriod === '12m'
-                    ? `${(value * 1000000).toLocaleString('vi-VN')} ${t.vnd}`
-                    : `${(value * 1000).toLocaleString('vi-VN')} ${t.vnd}`,
-                  t.total
-                ]}
+                formatter={(value) => {
+                  const numericValue = Array.isArray(value)
+                    ? Number(value[0] ?? 0)
+                    : typeof value === 'number'
+                      ? value
+                      : Number(value ?? 0);
+
+                  return [
+                    chartPeriod === '6m' || chartPeriod === '12m'
+                      ? `${(numericValue * 1000000).toLocaleString('vi-VN')} ${t.vnd}`
+                      : `${(numericValue * 1000).toLocaleString('vi-VN')} ${t.vnd}`,
+                    t.total,
+                  ];
+                }}
               />
               <Line
                 type="monotone"
@@ -537,7 +542,15 @@ export function Dashboard() {
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [`${(value * 1000).toLocaleString('vi-VN')} ${t.vnd}`, t.total]}
+                formatter={(value) => {
+                  const numericValue = Array.isArray(value)
+                    ? Number(value[0] ?? 0)
+                    : typeof value === 'number'
+                      ? value
+                      : Number(value ?? 0);
+
+                  return [`${(numericValue * 1000).toLocaleString('vi-VN')} ${t.vnd}`, t.total];
+                }}
               />
               <Bar dataKey="revenue" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
             </BarChart>
@@ -593,7 +606,7 @@ export function Dashboard() {
           <div className="p-6">
             {topCustomers.length > 0 ? (
               <div className="space-y-3">
-                {topCustomers.map((customer, index) => (
+                {topCustomers.map((customer) => (
                   <div key={customer.name} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
                       {customer.name.charAt(0).toUpperCase()}

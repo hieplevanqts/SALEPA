@@ -232,6 +232,10 @@ export interface Settings {
   currencySymbol: string;
   receiptFooter: string;
   lowStockThreshold: number;
+  businessName?: string;
+  businessAddress?: string;
+  businessPhone?: string;
+  businessWebsite?: string;
   // Bank transfer settings
   bankName?: string;
   bankAccountNumber?: string;

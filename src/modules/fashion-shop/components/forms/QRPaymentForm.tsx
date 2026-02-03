@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from '../../../../lib/fashion-shop-lib/useTranslation';
-import { QrCode, Copy, CheckCircle, AlertCircle, Clock, Building2, ChevronDown, ExternalLink, Settings } from 'lucide-react';
+import { Copy, CheckCircle } from 'lucide-react';
 
 interface QRPaymentFormProps {
   amount: number;
@@ -20,23 +19,13 @@ export interface QRPaymentData {
   transactionId?: string;
 }
 
-const BANKS = [
-  { code: 'VCB', name: 'Vietcombank', logo: '🏦', accountNumber: '1234567890', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'TCB', name: 'Techcombank', logo: '🏦', accountNumber: '9876543210', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'MB', name: 'MB Bank', logo: '🏦', accountNumber: '1122334455', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'VPB', name: 'VPBank', logo: '🏦', accountNumber: '5544332211', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'ACB', name: 'ACB', logo: '🏦', accountNumber: '6677889900', accountName: 'CONG TY POS SYSTEM' },
-  { code: 'BIDV', name: 'BIDV', logo: '🏦', accountNumber: '0099887766', accountName: 'CONG TY POS SYSTEM' },
-];
-
-export function QRPaymentForm({ amount, orderCode, onSuccess, onCancel, paymentType }: QRPaymentFormProps) {
-  const { t } = useTranslation();
-  const [selectedBank, setSelectedBank] = useState(BANKS[0]);
-  const [showBankList, setShowBankList] = useState(false);
+export function QRPaymentForm(props: QRPaymentFormProps) {
+  const { amount, orderCode, onSuccess, onCancel, paymentType } = props;
+  void onSuccess;
+  void onCancel;
   const [copied, setCopied] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [transactionId, setTransactionId] = useState('');
 
   // Load payment settings from localStorage
   const [paymentSettings, setPaymentSettings] = useState<any>(null);

@@ -69,7 +69,9 @@ export default function ConvenienceStoreRouter() {
 
     const OrderDetailRoute = () => {
         const { id } = useParams();
-        const orders = Array.isArray(ordersRaw) ? ordersRaw : Object.values(ordersRaw || {});
+        const orders = Array.isArray(ordersRaw)
+            ? ordersRaw
+            : (Object.values(ordersRaw || {}) as { id: string }[]);
         const order = orders.find((o) => o.id === id);
         if (!order) {
             return <NotFound404 />;

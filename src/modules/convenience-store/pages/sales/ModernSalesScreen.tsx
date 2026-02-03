@@ -418,8 +418,6 @@ export function ModernSalesScreen() {
           if (!itemId) {
             return;
           }
-          // Tìm các dịch vụ đi kèm trong liệu trình
-          const treatmentProduct = products.find(p => (p.id ?? p._id) === itemId);
           createCustomerTreatmentPackage({
             customerId: selectedCustomerId,
             customerName: finalCustomerName,
@@ -830,7 +828,7 @@ export function ModernSalesScreen() {
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3">
               {displayProducts.filter(p => p).map((product) => {
-                const productId = product.id ?? product._id;
+                const productId = product.id ?? product._id ?? '';
                 if (!productId) {
                   return null;
                 }
@@ -924,7 +922,7 @@ export function ModernSalesScreen() {
           ) : (
             <div className="space-y-2">
               {displayProducts.filter(p => p).map((product) => {
-                const productId = product.id ?? product._id;
+                const productId = product.id ?? product._id ?? '';
                 if (!productId) {
                   return null;
                 }
