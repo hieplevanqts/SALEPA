@@ -1,21 +1,21 @@
 import { useStore } from '../../../../lib/restaurant-lib/store';
-import type { Order } from '../../../../lib/restaurant-lib/store';
+import type { Order, CartItem } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
-import { ShoppingBag, TrendingUp, Package, DollarSign, AlertTriangle, Clock, Calendar, X } from 'lucide-react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { TrendingUp, Package, DollarSign, AlertTriangle } from 'lucide-react';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useState } from 'react';
 
 type TimeFilter = 'today' | 'yesterday' | 'last7Days' | 'last30Days' | 'thisMonth' | 'lastMonth' | 'custom';
 type ChartPeriod = '7d' | '30d' | '6m' | '12m';
 
 export function Dashboard() {
-  const { orders: ordersRaw, products, currentShift: currentShiftRaw } = useStore();
+  const { orders: ordersRaw, products } = useStore();
   const { t } = useTranslation();
 
   // Time filter state
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('today');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [customStartDate] = useState('');
+  const [customEndDate] = useState('');
   
   // Chart period state
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('7d');
@@ -40,15 +40,6 @@ export function Dashboard() {
   const orders = ordersArray.filter((order) => {
     return order && order.id && order.total !== undefined && order.date;
   });
-
-  // Safely extract currentShift properties
-  const currentShift = currentShiftRaw ? {
-    openedBy: String(currentShiftRaw.openedBy || ''),
-    startTime: currentShiftRaw.startTime || new Date().toISOString(),
-    openingCash: Number(currentShiftRaw.openingCash || 0),
-    revenue: Number(currentShiftRaw.revenue || 0),
-    orderCount: Number(currentShiftRaw.orderCount || 0),
-  } : null;
 
   // Filter orders based on time filter
   const getFilteredOrders = () => {
@@ -122,8 +113,6 @@ export function Dashboard() {
 
   // Calculate statistics
   const totalRevenue = filteredOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
-  const totalOrders = filteredOrders.length;
-  const totalProducts = products.length;
   const lowStockProducts = products.filter((p) => p.stock < 10);
   const inventoryValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
 
@@ -136,38 +125,8 @@ export function Dashboard() {
   // Get yesterday's revenue for comparison
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayOrders = orders.filter((order) => {
-    const orderDate = new Date(order.date);
-    return orderDate >= yesterday && orderDate < today;
-  });
-  const yesterdayRevenue = yesterdayOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
-  const revenueChange = yesterdayRevenue > 0 
-    ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue * 100).toFixed(1)
-    : '0';
-
-  // Get revenue for last 7 days
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
-    return date.toISOString().split('T')[0];
-  });
-
-  const revenueByDay = last7Days.map((date) => {
-    const dayOrders = orders.filter((order) => {
-      const orderDateStr = typeof order.date === 'string' ? order.date : new Date(order.date).toISOString();
-      return orderDateStr.startsWith(date);
-    });
-    const revenue = dayOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
-    return {
-      date: new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
-      revenue: revenue / 1000,
-      orders: dayOrders.length,
-    };
-  });
-  
   // Function to get revenue data based on chart period
   const getRevenueChartData = () => {
-    const now = new Date();
     let days = 7;
     
     switch (chartPeriod) {
@@ -238,29 +197,10 @@ export function Dashboard() {
   
   const chartData = getRevenueChartData();
 
-  // Get revenue by payment method
-  const paymentMethodStats = orders.reduce((acc, order) => {
-    const method = order.paymentMethod;
-    if (!acc[method]) {
-      acc[method] = { count: 0, revenue: 0 };
-    }
-    acc[method].count += 1;
-    acc[method].revenue += Number(order.total || 0);
-    return acc;
-  }, {} as Record<string, { count: number; revenue: number }>);
-
-  const paymentChartData = Object.entries(paymentMethodStats).map(([method, data]) => ({
-    name: method === 'cash' ? `💵 ${t.cash}` : method === 'card' ? `💳 ${t.card}` : `🏦 ${t.transfer}`,
-    value: data.revenue,
-    count: data.count,
-  }));
-
-  const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'];
-
   // Category performance
   const categoryStats: Record<string, { revenue: number; quantity: number }> = {};
   filteredOrders.forEach((order) => {
-    const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+    const items = Array.isArray(order.items) ? order.items : (Object.values(order.items || {}) as CartItem[]);
     items.forEach((item) => {
       // Validate item has valid primitive values
       if (!item || typeof item !== 'object' || !item.category || typeof item.category !== 'string') {
@@ -282,18 +222,6 @@ export function Dashboard() {
       quantity: data.quantity,
     }))
     .sort((a, b) => b.revenue - a.revenue);
-
-  // Hourly sales trend (based on filter)
-  const hourlySales: Record<number, number> = {};
-  filteredOrders.forEach((order) => {
-    const hour = new Date(order.date).getHours();
-    hourlySales[hour] = (hourlySales[hour] || 0) + Number(order.total || 0);
-  });
-
-  const hourlySalesData = Array.from({ length: 24 }, (_, i) => ({
-    hour: `${i}h`,
-    revenue: (hourlySales[i] || 0) / 1000,
-  })).filter((item) => item.revenue > 0);
 
   // Top customers
   const customerStats: Record<string, { name: string; orders: number; revenue: number }> = {};
@@ -318,7 +246,7 @@ export function Dashboard() {
   // Top products
   const productStats: Record<string, { name: string; quantity: number; revenue: number }> = {};
   filteredOrders.forEach((order) => {
-    const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+    const items = Array.isArray(order.items) ? order.items : (Object.values(order.items || {}) as CartItem[]);
     items.forEach((item) => {
       // Validate item has valid primitive values
       if (!item || typeof item !== 'object' || !item.name || typeof item.name !== 'string') {

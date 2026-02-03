@@ -1,9 +1,8 @@
 // components/Menu.tsx
-import { Link } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import { useStore } from "../../../lib/convenience-store-lib/store";
 import { translations } from "../../../lib/convenience-store-lib/i18n";
-import type { IndustryType } from "../../../lib/convenience-store-lib/store";
+import type { IndustryType } from "../../../modules/convenience-store/pages/system/IndustrySelection";
 import { loadDemoTreatmentPackages } from "../../../lib/convenience-store-lib/demoData";
 import logoFull from "../../../assets/da526f2429ac0b8456776974a6480c4f4260145c.png";
 import logoIcon from "../../../assets/f71a990f243f87339543c6b7dbfdaca1ddb212f4.png";
@@ -12,14 +11,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import type { Tab } from "../components/navigation/tabs";
 import { TAB_ROUTE_MAP } from "../components/navigation/tabRouteMap";
 
-import ProfileMenu from '../components/layout/ProfileMenu';
+import { ProfileMenu } from '../components/layout/ProfileMenu';
 import {
     LayoutGrid,
     ShoppingCart,
     Package,
     Settings as SettingsIcon,
     BarChart3,
-    HelpCircle,
     Languages,
     ClipboardList,
     Users,
@@ -29,20 +27,15 @@ import {
     ChevronLeft,
     ChevronRight,
     FolderOpen,
-    Calendar,
     Warehouse,
 } from "lucide-react";
-
-
-type UserRole = "admin" | "cashier" | "technician";
 
 export default function Menu() {
     /** ✅ BẮT BUỘC cho App Router */
     const navigate = useNavigate();
     const location = useLocation();
     const authRaw = localStorage.getItem("auth");
-    const userRole = JSON.parse(authRaw);
-    const [mounted, setMounted] = useState(false);
+    const userRole = authRaw ? JSON.parse(authRaw) : null;
     const activeTab = location.pathname;
 
     // const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -59,28 +52,13 @@ export default function Menu() {
         // Show industry selection if onboarding completed but no industry selected
         return localStorage.getItem('salepa_onboarding_completed') === 'true' && !localStorage.getItem('salepa_industry_selected');
     });
-    const [isLoggedIn, setIsLoggedIn] = useState(() => {
-        // Check localStorage for login state
-        const savedLoginState = localStorage.getItem('salepa_isLoggedIn');
-        const rememberMe = localStorage.getItem('salepa_rememberMe');
-        return savedLoginState === 'true' && rememberMe === 'true';
-    });
-    const [currentUser, setCurrentUser] = useState(() => {
-        return localStorage.getItem('salepa_username') || '';
-    });
     const {
         language,
         setLanguage,
         sidebarCollapsed,
         toggleSidebar,
-        users,
-        selectedIndustry,
     } = useStore();
     const t = translations[language];
-    const [showHelp, setShowHelp] = useState(false);
-
-    // Get current user's full user object
-    const currentUserObject = users.find(u => u.username === currentUser);
 
     // Check if first time user
     useEffect(() => {
@@ -99,16 +77,6 @@ export default function Menu() {
             loadIndustryData(savedIndustry);
         }
 
-        // Keyboard shortcut for help
-        const handleKeyPress = (e: KeyboardEvent) => {
-            if (e.key === 'F1') {
-                e.preventDefault();
-                setShowHelp(true);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyPress);
-
         // Expose demo data loader to window for easy testing
         (window as any).loadDemoPackages = () => {
             loadDemoTreatmentPackages();
@@ -123,58 +91,7 @@ export default function Menu() {
         console.log('%c4. Chọn dịch vụ "Facial trị mụn" hoặc "Facial dưỡng ẩm"', 'color: #666; font-size: 12px;');
         console.log('%c5. Sẽ thấy dropdown "Hình thức thanh toán" với gợi ý sử dụng gói liệu trình!', 'color: #10B981; font-weight: bold; font-size: 12px;');
 
-        return () => window.removeEventListener('keydown', handleKeyPress);
     }, [showOnboardingScreen, showIndustrySelection]);
-
-    const handleOnboardingComplete = () => {
-        localStorage.setItem('salepa_onboarding_completed', 'true');
-        setShowOnboardingScreen(false);
-        setShowIndustrySelection(true); // Show industry selection after onboarding
-    };
-
-    const handleOnboardingSkip = () => {
-        localStorage.setItem('salepa_onboarding_completed', 'true');
-        setShowOnboardingScreen(false);
-        setShowIndustrySelection(true); // Show industry selection after skipping
-    };
-
-    const handleIndustrySelect = (industry: IndustryType) => {
-        console.log('Selected industry:', industry);
-        localStorage.setItem('salepa_industry_selected', industry);
-
-        // Load industry-specific demo data
-        const { loadIndustryData } = useStore.getState();
-        loadIndustryData(industry);
-
-        setShowIndustrySelection(false);
-        // After industry selection, user will see login screen
-    };
-
-    const handleIndustrySkip = () => {
-        // Set default industry as Spa
-        const defaultIndustry = 'spa-service';
-        localStorage.setItem('salepa_industry_selected', defaultIndustry);
-
-        // Load industry data
-        const { loadIndustryData } = useStore.getState();
-        loadIndustryData(defaultIndustry);
-
-        setShowIndustrySelection(false);
-    };
-
-    const handleQuickAction = (action: string) => {
-        switch (action) {
-            case 'new-sale':
-                 navigate(`/${TAB_ROUTE_MAP["sales"]}`);
-                break;
-            case 'add-product':
-                navigate(`/${TAB_ROUTE_MAP["products"]}`);
-                break;
-            case 'view-reports':
-                navigate(`/${TAB_ROUTE_MAP["reports"]}`);
-                break;
-        }
-    };
 
     const handleTabChange = (tab: Tab) => {
         const path = TAB_ROUTE_MAP[tab];
@@ -190,10 +107,6 @@ export default function Menu() {
         localStorage.removeItem('salepa_username');
         localStorage.removeItem('salepa_rememberMe');
         localStorage.removeItem('salepa_userRole');
-
-        // Reset login state
-        setIsLoggedIn(false);
-        setCurrentUser('');
         // setUserRole('admin');
         navigate('/fashion/shop/login');
 
@@ -318,10 +231,10 @@ export default function Menu() {
                                     ? 'bg-[#FE7410]/10 text-[#FE7410]'
                                     : 'text-gray-600 hover:bg-gray-50'
                                 }`}
-                            title={sidebarCollapsed ? t.customer?.title || 'Khách hàng' : undefined}
+                            title={sidebarCollapsed ? t.customer || 'Khách hàng' : undefined}
                         >
                             <Users className="w-5 h-5" />
-                            {!sidebarCollapsed && <span>{t.customer?.title || 'Khách hàng'}</span>}
+                            {!sidebarCollapsed && <span>{t.customer || 'Khách hàng'}</span>}
                         </button>
                     )}
 

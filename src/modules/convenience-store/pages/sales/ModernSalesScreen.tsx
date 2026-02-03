@@ -832,7 +832,7 @@ export function ModernSalesScreen() {
                 if (!productId) {
                   return null;
                 }
-                const categoryImg = product.image || getCategoryImage(product.category, product.productType);
+                const categoryImg = product.image || getCategoryImage(product.category ?? product.product_category_id ?? '', product.productType);
                 const isFavorite = (favoriteProducts || []).some(p => (p.id ?? p._id) === productId);
                 return (
                   <div
@@ -926,7 +926,7 @@ export function ModernSalesScreen() {
                 if (!productId) {
                   return null;
                 }
-                const categoryImg = product.image || getCategoryImage(product.category, product.productType);
+                const categoryImg = product.image || getCategoryImage(product.category ?? product.product_category_id ?? '', product.productType);
                 const isFavorite = (favoriteProducts || []).some(p => (p.id ?? p._id) === productId);
                 return (
                   <div

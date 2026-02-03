@@ -127,7 +127,7 @@ export interface Order {
   note?: string;
   shiftId?: string;
   messages?: ChatMessage[];
-  status?: 'pending' | 'completed' | 'cancelled'; // Add status
+  status?: 'pending' | 'confirmed' | 'preparing' | 'completed' | 'cancelled'; // Add status
   paidAt?: string; // When payment was collected
   receivedAmount?: number; // Amount received from customer
   paidAmount?: number; // Legacy alias for receivedAmount
@@ -366,7 +366,7 @@ export interface TableReservation {
 export interface SelfServiceOrder extends Order {
   tableId?: string;
   tableName?: string;
-  status: 'pending' | 'completed' | 'cancelled'; // Simplified to 3 main statuses only
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled';
   orderType: 'dine-in' | 'takeaway';
 }
 

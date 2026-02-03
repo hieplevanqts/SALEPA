@@ -17,7 +17,7 @@ interface OrderHistoryProps {
 }
 
 export function OrderHistory({ onShowProfileMenu }: OrderHistoryProps = {}) {
-  const { orders: ordersRaw, deleteOrder, updateOrder, selectedIndustry } = useStore();
+  const { orders: ordersRaw, deleteOrder, updateOrder } = useStore();
   const { t } = useTranslation();
   
   // Normalize orders to arrays (handle persisted object format)

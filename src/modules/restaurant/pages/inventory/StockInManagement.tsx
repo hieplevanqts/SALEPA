@@ -385,12 +385,6 @@ export default function StockInManagement() {
     setCurrentPage(1);
   };
   
-  const handleDelete = (receiptId: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa phiếu nhập này?')) {
-      deleteStockInReceipt(receiptId);
-    }
-  };
-  
   const handleDeleteConfirm = (receipt: StockInReceipt) => {
     setDeletingReceipt(receipt);
     setShowDeleteConfirm(true);

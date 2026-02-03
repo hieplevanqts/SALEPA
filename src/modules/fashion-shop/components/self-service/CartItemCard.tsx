@@ -14,7 +14,7 @@ export function CartItemCard({ item, onUpdateQuantity, onUpdateNote, onRemove, c
   const { t } = useTranslation();
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-all">
+    <div className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:border-blue-300 transition-all ${compact ? 'p-2' : 'p-3'}`}>
       <div className="flex items-start gap-2 mb-2">
         <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
           {item.image ? (

@@ -3,6 +3,8 @@ import { X, Package, DollarSign, Tag, Check, AlertCircle, Loader2 } from 'lucide
 import { api } from '../../../../lib/fashion-shop-lib/api';
 import type { ProductVariant } from '../../../../lib/fashion-shop-lib/mockProductData_fashion_only';
 
+type EnrichedVariant = ProductVariant & { quantity: number };
+
 interface VariantSelectionModalProps {
   productId: string;
   productName: string;
@@ -20,10 +22,10 @@ export function VariantSelectionModal({
   onSelect,
   onClose,
 }: VariantSelectionModalProps) {
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [variants, setVariants] = useState<EnrichedVariant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<EnrichedVariant | null>(null);
 
   // Load variants on mount
   useEffect(() => {
@@ -52,7 +54,7 @@ export function VariantSelectionModal({
         const enrichedVariants = variantsResponse.data.map((v: any) => ({
           ...v,
           quantity: inventoryMap.get(v._id) || 0,
-        }));
+        })) as EnrichedVariant[];
         
         setVariants(enrichedVariants);
         
@@ -64,7 +66,8 @@ export function VariantSelectionModal({
           setSelectedVariant(firstAvailable);
         }
       } else {
-        setError(variantsResponse.error || 'Không thể tải variants');
+        const errorMessage = 'error' in variantsResponse ? variantsResponse.error : undefined;
+        setError(errorMessage || 'Không thể tải variants');
       }
     } catch (err) {
       setError('Lỗi kết nối');

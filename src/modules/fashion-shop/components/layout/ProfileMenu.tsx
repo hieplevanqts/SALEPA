@@ -8,7 +8,7 @@ interface ProfileMenuProps {
 }
 
 export function ProfileMenu({ onClose, onLogout }: ProfileMenuProps) {
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showProfileDetails, setShowProfileDetails] = useState(false);
 

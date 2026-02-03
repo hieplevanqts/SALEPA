@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, X, Calendar, Check } from 'lucide-react';
+import { Bell, X, Calendar } from 'lucide-react';
 import { useStore } from '../../../../lib/fashion-shop-lib/store';
 
 interface NotificationBellProps {

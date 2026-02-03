@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../../../lib/fashion-shop-lib/store';
-import type { Appointment, AppointmentService, Customer, User, Product } from '../../../../lib/fashion-shop-lib/store';
+import type { Appointment, AppointmentService, User, Product } from '../../../../lib/fashion-shop-lib/store';
 import {
   Calendar as CalendarIcon, List, Search, Filter, Plus, Edit, Trash2,
   Clock, User as UserIcon, Phone, Mail, X, Check, AlertCircle,
