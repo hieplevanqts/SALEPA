@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { X, User, Phone, Mail, MapPin, Calendar, Edit, Trash2, Cake, Hash, ShoppingBag, Clock, CreditCard, FileText } from 'lucide-react';
+import { X, Phone, Mail, MapPin, Calendar, Edit, Trash2, Cake, Hash, ShoppingBag, Clock, CreditCard, FileText } from 'lucide-react';
 import { useStore } from '../../../../lib/fashion-shop-lib/store';
 import type { Customer } from '../../../../lib/fashion-shop-lib/store';
 import { useTranslation } from '../../../../lib/fashion-shop-lib/useTranslation';
@@ -38,19 +38,19 @@ export function CustomerDetail({ customer, onClose, onEdit, onDelete }: Customer
       case 'acquaintance':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-            {t.customer?.acquaintance || 'Acquaintance'}
+            {t.customerData?.acquaintance || 'Acquaintance'}
           </span>
         );
       case 'employee':
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            {t.customer?.employee || 'Employee'}
+            {t.customerData?.employee || 'Employee'}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-            {t.customer?.regular || 'Regular'}
+            {t.customerData?.regular || 'Regular'}
           </span>
         );
     }

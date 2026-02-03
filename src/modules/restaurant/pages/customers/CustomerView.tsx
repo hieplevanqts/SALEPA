@@ -5,7 +5,7 @@ import {
   ShoppingBag, Plus, Minus, Trash2, Check, X, 
   ChevronRight, MapPin, User, Phone, MessageSquare, Coffee,
   Utensils, PackageOpen, Sparkles, Clock, Star, ArrowLeft,
-  Receipt, Package, History
+  Receipt
 } from 'lucide-react';
 
 // Simulate QR code scanning
@@ -20,7 +20,6 @@ export function CustomerView() {
     updateCartQuantity,
     createSelfServiceOrder,
     categories,
-    clearCart,
     language,
     setLanguage,
     selfServiceOrders
@@ -36,7 +35,6 @@ export function CustomerView() {
   const [showCart, setShowCart] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [currentTable, setCurrentTable] = useState<any>(null);
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
 
   // Demo tables
   const demoTables = [
@@ -178,8 +176,6 @@ export function CustomerView() {
 
   // View Order Screen
   if (step === 'view-order') {
-    const latestOrder = tableOrders[0];
-    
     return (
       <div className="h-screen flex flex-col bg-gray-50">
         {/* Header */}

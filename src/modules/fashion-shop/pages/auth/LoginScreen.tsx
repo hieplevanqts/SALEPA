@@ -31,7 +31,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regShowPassword, setRegShowPassword] = useState(false);
   const [regShowConfirmPassword, setRegShowConfirmPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
+  const [selectedRole] = useState<UserRole>('admin');
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 

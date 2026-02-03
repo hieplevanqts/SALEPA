@@ -48,7 +48,7 @@ export default function Menu() {
         // Check if user has seen onboarding before
         return !localStorage.getItem('salepa_onboarding_completed');
     });
-    const [showIndustrySelection, setShowIndustrySelection] = useState(() => {
+    const [showIndustrySelection] = useState(() => {
         // Show industry selection if onboarding completed but no industry selected
         return localStorage.getItem('salepa_onboarding_completed') === 'true' && !localStorage.getItem('salepa_industry_selected');
     });

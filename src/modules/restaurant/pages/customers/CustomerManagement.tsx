@@ -6,7 +6,6 @@ import { CustomerForm } from '../../components/forms/CustomerForm';
 import { CustomerDetailView } from './CustomerDetailView';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { Pagination } from '../../components/common/Pagination';
-import { forceLoadDemoSpaOrders } from '../../../../lib/restaurant-lib/demoData';
 import { demoCustomer, demoTreatmentPackage, demoAppointments } from '../../../../lib/restaurant-lib/demoCustomerWithPackage';
 import * as XLSX from 'xlsx';
 
@@ -152,7 +151,7 @@ export function CustomerManagement({ onViewOrder, onShowProfileMenu }: CustomerM
         'Số điện thoại': customer.phone,
         'Địa chỉ': customer.address || '',
         'Email': customer.email || '',
-        'Nhóm khách hàng': getCustomerGroupLabel(customer.group),
+        'Nhóm khách hàng': getCustomerGroupLabel(customer.customerGroup),
         'Tổng chi tiêu (đ)': customer.totalSpent,
         'Đã thanh toán (đ)': customer.totalPaid,
         'Công nợ (đ)': customer.debt,
@@ -470,7 +469,7 @@ export function CustomerManagement({ onViewOrder, onShowProfileMenu }: CustomerM
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
             <div className="p-6">
               <h3 className="text-xl font-bold text-red-600 mb-4">
-                {t.customer?.deleteConfirm || 'Xác nhận xóa'}
+                {t.customerData?.deleteConfirm || 'Xác nhận xóa'}
               </h3>
               <p className="text-gray-600 mb-6">
                 {t.language === 'vi' 

@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../../../lib/fashion-shop-lib/store';
-import type { Appointment, AppointmentService, User, Product } from '../../../../lib/fashion-shop-lib/store';
+import type { Appointment, AppointmentService } from '../../../../lib/fashion-shop-lib/store';
 import {
   Calendar as CalendarIcon, List, Search, Filter, Plus, Edit, Trash2,
-  Clock, User as UserIcon, Phone, Mail, X, Check, AlertCircle,
-  ChevronLeft, ChevronRight, CalendarCheck, UserCircle2, ChevronDown
+  X, AlertCircle, ChevronLeft, ChevronRight, CalendarCheck, ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import TreatmentPackageModal from '../../components/modals/TreatmentPackageModal';
-import { Pagination } from '../../components/feedback/Pagination';
+import { Pagination } from '../../components/common/Pagination';
 
 type ViewMode = 'list' | 'calendar';
 type CalendarViewType = 'day' | 'week' | 'month' | 'year';
+type FormService = Omit<AppointmentService, 'duration'> & {
+  duration?: number;
+  numberOfSessionsToUse?: number;
+};
 
 export default function AppointmentManagement() {
   const { 
@@ -22,7 +25,6 @@ export default function AppointmentManagement() {
     createAppointment, 
     updateAppointment, 
     deleteAppointment,
-    getPackageForService,
     usePackageSession,
     returnPackageSession,
     isTechnicianBusy,
@@ -66,28 +68,12 @@ export default function AppointmentManagement() {
   const [formData, setFormData] = useState({
     customerId: '',
     appointmentDate: '',
-    services: [] as { 
-      instanceId: string;
-      productId: string; 
-      productName: string;
-      productType: 'product' | 'service' | 'treatment';
-      quantity: number;
-      technicianIds: string[]; // ⭐ Changed to array
-      startTime: string; // ⭐ NEW: Start time for this service
-      endTime: string;   // ⭐ NEW: End time for this service
-      useTreatmentPackage?: boolean;
-      treatmentPackageId?: string;
-      treatmentPackageName?: string;
-      packageSessionNumber?: number;
-      numberOfSessionsToUse?: number; // Số buổi muốn trừ (cho phép chọn nhiều buổi)
-    }[],
+    services: [] as FormService[],
     notes: '',
     status: 'pending' as Appointment['status'],
   });
 
   const technicians = users.filter(u => (u.roleGroupId === '3' || u.roleGroupId === '1') && u.isActive);
-  const servicesOnly = products.filter(p => p.productType === 'service');
-
   // ⭐ Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -117,8 +103,9 @@ export default function AppointmentManagement() {
         }
         
         // Check if appointment date has passed or if it's today and time has passed
-        const isPast = appointment.appointmentDate < currentDate || 
-                      (appointment.appointmentDate === currentDate && appointment.endTime < currentTime);
+        const endTime = appointment.endTime || appointment.appointmentTime;
+        const isPast = appointment.appointmentDate < currentDate ||
+                      (appointment.appointmentDate === currentDate && !!endTime && endTime < currentTime);
         
         if (isPast) {
           // Auto-complete the appointment
@@ -506,7 +493,7 @@ export default function AppointmentManagement() {
           productName: item.productName,
           productType: item.productType,
           quantity: item.quantity,
-          technicianIds: item.productType === 'service' || item.productType === 'treatment' ? [] : [],
+          technicianIds: [],
           startTime: itemStartTime, // ⭐ Auto-calculated
           endTime: itemEndTime,     // ⭐ Auto-calculated
           useTreatmentPackage: true,
@@ -570,75 +557,10 @@ export default function AppointmentManagement() {
   };
 
   // NEW: Calculate package usage summary
-  const calculatePackageUsage = () => {
-    const usage: Record<string, {
-      packageId: string;
-      packageName: string;
-      count: number;
-      remainingSessions: number;
-    }> = {};
-    
-    formData.services.forEach(service => {
-      if (service.useTreatmentPackage && service.treatmentPackageId) {
-        if (!usage[service.treatmentPackageId]) {
-          const pkg = customerTreatmentPackages.find(
-            p => p.id === service.treatmentPackageId
-          );
-          usage[service.treatmentPackageId] = {
-            packageId: service.treatmentPackageId,
-            packageName: service.treatmentPackageName || pkg?.treatmentName || "",
-            count: 0,
-            remainingSessions: pkg?.remainingSessions || 0,
-          };
-        }
-        usage[service.treatmentPackageId].count++;
-      }
-    });
-    
-    return Object.values(usage);
-  };
-
-  // NEW: Validate package usage before saving
-  const validatePackageUsage = () => {
-    const packageUsage = calculatePackageUsage();
-    
-    for (const usage of packageUsage) {
-      if (usage.count > usage.remainingSessions) {
-        toast.error(
-          `Gói "${usage.packageName}" chỉ còn ${usage.remainingSessions} buổi, không thể sử dụng ${usage.count} buổi!`
-        );
-        return false;
-      }
-    }
-    
-    return true;
-  };
-
-
-
   const handleRemoveService = (index: number) => {
     setFormData({
       ...formData,
       services: formData.services.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleUpdateService = (index: number, productId: string) => {
-    const newServices = [...formData.services];
-    const product = products.find(p => p.id === productId);
-    
-    newServices[index] = { 
-      ...newServices[index],
-      productId,
-      productName: product?.name,
-      useTreatmentPackage: false,
-      treatmentPackageId: undefined,
-      treatmentPackageName: undefined,
-    };
-    
-    setFormData({
-      ...formData,
-      services: newServices,
     });
   };
 
@@ -654,15 +576,6 @@ export default function AppointmentManagement() {
       newServices[index].technicianIds = currentIds.filter(id => id !== technicianId);
     }
     
-    setFormData({
-      ...formData,
-      services: newServices,
-    });
-  };
-
-  const handleUpdateNumberOfSessions = (index: number, numberOfSessions: number) => {
-    const newServices = [...formData.services];
-    newServices[index].numberOfSessionsToUse = numberOfSessions;
     setFormData({
       ...formData,
       services: newServices,
@@ -1249,8 +1162,8 @@ export default function AppointmentManagement() {
                   totalPages={totalPages}
                   totalItems={filteredAppointments.length}
                   itemsPerPage={itemsPerPage}
-                  onPageChange={(page) => setCurrentPage(page)}
-                  onItemsPerPageChange={(items) => {
+                  onPageChange={(page: number) => setCurrentPage(page)}
+                  onItemsPerPageChange={(items: number) => {
                     setItemsPerPage(items);
                     setCurrentPage(1);
                   }}
@@ -1376,7 +1289,7 @@ export default function AppointmentManagement() {
                         return appointment.services
                           .filter(s => (s.productType === 'service' || s.productType === 'treatment') && s.startTime && s.endTime)
                           .map((service, svcIdx) => {
-                            const position = calculatePosition(service.startTime, service.duration);
+                            const position = calculatePosition(service.startTime || '00:00', service.duration || 0);
                             
                             return (
                               <div
@@ -1487,7 +1400,7 @@ export default function AppointmentManagement() {
                             return appointment.services
                               .filter(s => (s.productType === 'service' || s.productType === 'treatment') && s.startTime && s.endTime)
                               .map((service, svcIdx) => {
-                                const position = calculatePosition(service.startTime, service.duration);
+                                const position = calculatePosition(service.startTime || '00:00', service.duration || 0);
                                 
                                 return (
                                   <div
@@ -1770,6 +1683,7 @@ export default function AppointmentManagement() {
               })()}
 
               {/* OLD - Remove this entire block */}
+              {/*
               {false && formData.customerId && (() => {
                 const customerPackages = getCustomerActivePackages(formData.customerId);
                 
@@ -1881,6 +1795,7 @@ export default function AppointmentManagement() {
                   </div>
                 );
               })()}
+              */}
 
               <div className="space-y-6">
                 {/* DỊCH VỤ SECTION */}
@@ -1903,8 +1818,6 @@ export default function AppointmentManagement() {
                       .map((service, actualIndex) => ({ service, actualIndex }))
                       .filter(({ service }) => service.productType === 'service' || service.productType === 'treatment')
                       .map(({ service, actualIndex }, displayIndex) => {
-                        const selectedProduct = products.find(p => p.id === service.productId);
-                        
                         return (
                           <div key={service.instanceId || actualIndex} className={`border rounded-lg p-4 space-y-3 font-['Inter'] ${
                             service.useTreatmentPackage 
@@ -1949,7 +1862,7 @@ export default function AppointmentManagement() {
                                       
                                       // ⭐ Auto-calculate endTime when product changes
                                       const duration = selectedProduct.duration || 60;
-                                      const newStartTime = currentService.startTime || formData.startTime;
+                                      const newStartTime = currentService.startTime || '09:00';
                                       const newEndTime = calculateTimeEnd(newStartTime, duration);
                                       
                                       updatedServices[actualIndex] = {

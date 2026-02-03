@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { User, Phone, Mail, MapPin, Calendar, Edit, Trash2, Cake, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, ArrowLeft, Package, Scissors, TrendingUp, Printer, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Calendar, Edit, Trash2, Cake, AlertCircle, ShoppingBag, Clock, CreditCard, FileText, ArrowLeft } from 'lucide-react';
 import { useStore } from '../../../../lib/restaurant-lib/store';
 import type { Customer, Order } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
@@ -17,28 +17,19 @@ interface CustomerDetailViewProps {
 
 type TabType = 'overview' | 'purchases';
 
-export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onViewOrder, onShowProfileMenu }: CustomerDetailViewProps) {
+export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onShowProfileMenu }: CustomerDetailViewProps) {
   const { t } = useTranslation();
-  const { orders, products, deleteOrder, customerTreatmentPackages, getCustomerActivePackages } = useStore();
+  const { orders, deleteOrder } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
-  const [expandedPackages, setExpandedPackages] = useState<string[]>([]);
-
-  // Toggle package expansion
-  const togglePackageExpansion = (packageId: string) => {
-    setExpandedPackages(prev => 
-      prev.includes(packageId) 
-        ? prev.filter(id => id !== packageId)
-        : [...prev, packageId]
-    );
-  };
-
   // Get customer orders
   const customerOrders = useMemo(() => {
-    const ordersArray = Array.isArray(orders) ? orders : Object.values(orders || {});
+    const ordersArray: Order[] = Array.isArray(orders)
+      ? orders
+      : (Object.values(orders || {}) as Order[]);
     let result = ordersArray.filter((order) => 
       order && order.customerPhone === customer.phone
     );
@@ -53,34 +44,6 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
     
     return result.sort((a, b) => new Date(b.timestamp || b.date || '').getTime() - new Date(a.timestamp || a.date || '').getTime());
   }, [orders, customer.phone, filterStatus]);
-
-  // Get customer treatment packages from store
-  const customerTreatmentPackagesData = useMemo(() => {
-    return customerTreatmentPackages
-      .filter(pkg => pkg.customerId === customer.id)
-      .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
-  }, [customerTreatmentPackages, customer.id]);
-
-  // Extract services from orders
-  const customerServices = useMemo(() => {
-    const services: any[] = [];
-    customerOrders.forEach((order) => {
-      const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
-      items.forEach((item: any) => {
-        if (item && (item.type === 'service' || item.productType === 'service')) {
-          services.push({
-            id: `${order.id}-${item.name}`,
-            name: item.name,
-            serviceDate: order.timestamp || order.date,
-            duration: item.duration || 0,
-            price: item.price,
-            orderId: order.id,
-          });
-        }
-      });
-    });
-    return services;
-  }, [customerOrders]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -178,20 +141,6 @@ export function CustomerDetailView({ customer, onClose, onEdit, onDelete, onView
     return (
       today.getDate() === birthDate.getDate() &&
       today.getMonth() === birthDate.getMonth()
-    );
-  };
-
-  const getStatusBadge = (status?: string) => {
-    const badges = {
-      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ xử lý' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã hủy' },
-    };
-    const badge = badges[status as keyof typeof badges] || badges.completed;
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
-        {badge.label}
-      </span>
     );
   };
 

@@ -127,7 +127,7 @@ export interface Order {
   note?: string;
   shiftId?: string;
   messages?: ChatMessage[];
-  status?: 'pending' | 'confirmed' | 'preparing' | 'completed' | 'cancelled'; // Add status
+  status?: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled'; // Add status
   paidAt?: string; // When payment was collected
   receivedAmount?: number; // Amount received from customer
   paidAmount?: number; // Legacy alias for receivedAmount
