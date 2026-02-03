@@ -130,6 +130,7 @@ export interface Order {
   status?: 'pending' | 'completed' | 'cancelled'; // Add status
   paidAt?: string; // When payment was collected
   receivedAmount?: number; // Amount received from customer
+  paidAmount?: number; // Legacy alias for receivedAmount
   changeAmount?: number; // Change returned to customer
   paymentHistory?: PaymentHistory[]; // History of all payments
   createdBy?: string; // Người tạo hóa đơn

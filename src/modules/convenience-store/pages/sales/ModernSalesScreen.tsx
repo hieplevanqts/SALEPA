@@ -3,22 +3,20 @@ import { useStore } from '../../../../lib/convenience-store-lib/store';
 import { useTranslation } from '../../../../lib/convenience-store-lib/useTranslation';
 import { toast } from 'sonner';
 import { 
-  Search, Plus, Minus, Trash2, X, DollarSign, Printer, User, 
+  Search, Plus, Minus, Trash2, X, DollarSign, User, 
   Clock, CreditCard, Smartphone, QrCode, Zap, Grid3x3, List,
-  Tag, Star, TrendingUp, ShoppingBag, Calculator, Percent,
-  Menu, ChevronRight, Check, AlertCircle, Barcode, Save,
-  RotateCcw, FileText, Users, PauseCircle, PlayCircle,
-  Settings, History, Grid, Monitor, Keyboard, Edit3, Edit2,
-  MessageSquare, Receipt, Eye, Volume2, Bell, Gift, SplitSquare,
-  Package, Scissors, Sparkles, UserPlus
+  Tag, Star, ShoppingBag, Percent,
+  Check, Barcode,
+  RotateCcw, PauseCircle, PlayCircle,
+  History, Monitor, Edit2,
+  Receipt, Volume2, Gift, Sparkles
 } from 'lucide-react';
-import { CardPaymentForm, type CardData } from '../../components/sales/CardPaymentForm';
-import { QRPaymentForm, type QRPaymentData } from '../../components/sales/QRPaymentForm';
+import { CardPaymentForm } from '../../components/sales/CardPaymentForm';
+import { QRPaymentForm } from '../../components/sales/QRPaymentForm';
 import { Receipt as ReceiptModal } from '../../components/sales/Receipt';
 import { CustomerForm } from '../../components/customers/CustomerForm';
 
 type PaymentMethodType = 'cash' | 'card' | 'transfer' | 'momo' | 'zalopay' | 'vnpay';
-type ProductTypeFilter = 'all' | 'product' | 'service' | 'treatment';
 
 // Helper function to get category images from Unsplash
 const getCategoryImage = (category: string, productType?: string): string => {
@@ -82,7 +80,6 @@ export function ModernSalesScreen() {
     removeFromCart, 
     updateCartQuantity, 
     createOrder, 
-    updateOrder,
     deleteOrder,
     categories,
     recentProducts,
@@ -94,11 +91,8 @@ export function ModernSalesScreen() {
     deleteHeldBill,
     orders,
     settings,
-    sidebarCollapsed,
-    toggleSidebar,
     addToRecent,
     customers,
-    addCustomer,
     updateCustomer,
     customerTypes,
     createCustomerTreatmentPackage,
@@ -115,8 +109,6 @@ export function ModernSalesScreen() {
   const [showCustomerDisplay, setShowCustomerDisplay] = useState(false);
   const [showRecentTransactions, setShowRecentTransactions] = useState(false);
   const [showQuickQuantity, setShowQuickQuantity] = useState(false);
-  const [showItemNote, setShowItemNote] = useState(false);
-  const [showPriceOverride, setShowPriceOverride] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
@@ -133,8 +125,6 @@ export function ModernSalesScreen() {
   const [selectedCartItem, setSelectedCartItem] = useState<string | null>(null);
   const [quickQuantity, setQuickQuantity] = useState('1');
   const [selectedProductForQty, setSelectedProductForQty] = useState<string | null>(null);
-  const [itemNote, setItemNote] = useState('');
-  const [priceOverride, setPriceOverride] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [tipAmount, setTipAmount] = useState(0);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -208,8 +198,6 @@ export function ModernSalesScreen() {
   ];
 
   // Quick amounts for cash payment
-  const quickAmounts = [50000, 100000, 200000, 500000];
-  
   // Quick discount percentages
   const quickDiscounts = [5, 10, 15, 20];
 
@@ -259,7 +247,7 @@ export function ModernSalesScreen() {
 
     const product = products.find(p => p.barcode === barcodeInput.trim());
     if (product) {
-      addToCart(product.id);
+      addToCart(product);
       playSound('beep');
       setBarcodeInput('');
     } else {
@@ -270,7 +258,7 @@ export function ModernSalesScreen() {
 
   // Handle product click - Add directly to cart
   const handleProductClick = (productId: string) => {
-    const product = products.find(p => p.id === productId);
+    const product = products.find(p => (p.id ?? p._id) === productId);
     if (!product) return;
     
     addToCart(product);
@@ -285,7 +273,7 @@ export function ModernSalesScreen() {
   const handleAddWithQuantity = () => {
     if (!selectedProductForQty) return;
     
-    const product = products.find(p => p.id === selectedProductForQty);
+    const product = products.find(p => (p.id ?? p._id) === selectedProductForQty);
     if (!product) return;
     
     const qty = parseInt(quickQuantity) || 1;
@@ -346,14 +334,17 @@ export function ModernSalesScreen() {
       changeAmount: calculatedChange,
     }];
 
+    const orderStatus: 'completed' | 'pending' = receivedAmt >= total ? 'completed' : 'pending';
+
     // Create order with receipt info
     const orderData = {
       paymentMethod,
       customerName: finalCustomerName,
       customerPhone: finalCustomerPhone,
+      customerId: selectedCustomerId || undefined,
       discount,
       note: orderNote,
-      status: receivedAmt >= total ? 'completed' : 'pending',
+      status: orderStatus,
       paidAt: new Date().toISOString(),
       receivedAmount: receivedAmt,
       changeAmount: calculatedChange,
@@ -422,8 +413,13 @@ export function ModernSalesScreen() {
     if (selectedCustomerId) {
       cart.forEach(item => {
         if (item.productType === 'treatment' && item.sessions && item.sessions > 0) {
+          const itemId = item.id ?? item._id;
+          const itemName = item.name ?? item.title ?? '';
+          if (!itemId) {
+            return;
+          }
           // Tìm các dịch vụ đi kèm trong liệu trình
-          const treatmentProduct = products.find(p => p.id === item.id);
+          const treatmentProduct = products.find(p => (p.id ?? p._id) === itemId);
           const serviceIds = treatmentProduct?.sessionDetails 
             ? treatmentProduct.sessionDetails.flatMap(session => 
                 session.services.map(s => s.id)
@@ -433,8 +429,8 @@ export function ModernSalesScreen() {
           createCustomerTreatmentPackage({
             customerId: selectedCustomerId,
             customerName: finalCustomerName,
-            treatmentProductId: item.id,
-            treatmentName: item.name,
+            treatmentProductId: itemId,
+            treatmentName: itemName,
             totalSessions: item.sessions,
             usedSessions: 0,
             remainingSessions: item.sessions,
@@ -507,7 +503,7 @@ export function ModernSalesScreen() {
   const handleClearCart = () => {
     if (cart.length === 0) return;
     if (confirm(t('clearCart') + '?')) {
-      cart.forEach(item => removeFromCart(item.id));
+      cart.forEach(item => removeFromCart(item.id ?? item._id));
       playSound('beep');
     }
   };
@@ -526,10 +522,6 @@ export function ModernSalesScreen() {
     // TODO: Implement voucher validation logic here
     toast.info(`Mã voucher "${voucherCode}" đang được xử lý...`);
     playSound('beep');
-  };
-
-  const handleQuickPay = (amount: number) => {
-    setCustomerAmount(amount.toString());
   };
 
   // Keyboard shortcuts
@@ -603,12 +595,12 @@ export function ModernSalesScreen() {
       // Load cart items
       const items = Array.isArray(editingOrder.items) ? editingOrder.items : Object.values(editingOrder.items || {});
       items.forEach((item: any) => {
-        const product = products.find(p => p.id === item.productId || p.name === item.name);
+        const product = products.find(p => (p.id ?? p._id) === item.productId || p.name === item.name);
         if (product) {
           addToCart(product);
           // Update quantity if different
           if (item.quantity && item.quantity !== 1) {
-            updateCartQuantity(product.id, item.quantity);
+            updateCartQuantity(product.id ?? product._id, item.quantity);
           }
         }
       });
@@ -844,11 +836,13 @@ export function ModernSalesScreen() {
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3">
               {displayProducts.filter(p => p).map((product) => {
+                const productId = product.id ?? product._id;
                 const categoryImg = product.image || getCategoryImage(product.category, product.productType);
+                const isFavorite = (favoriteProducts || []).some(p => (p.id ?? p._id) === productId);
                 return (
                   <div
-                    key={product.id}
-                    onClick={() => handleProductClick(product.id)}
+                    key={productId}
+                    onClick={() => handleProductClick(productId)}
                     className="group bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-2 sm:p-3 cursor-pointer hover:shadow-2xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:border-orange-500 dark:hover:border-orange-500 relative"
                   >
                     {/* Product Image */}
@@ -882,12 +876,12 @@ export function ModernSalesScreen() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleFavorite(product.id);
+                        toggleFavorite(productId);
                         playSound('beep');
                       }}
                       className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-lg hover:bg-white transition-all shadow-sm"
                     >
-                      <Star className={`w-4 h-4 ${(favoriteProducts || []).some(p => p.id === product.id) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
+                      <Star className={`w-4 h-4 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
                     </button>
 
                     {/* Product Info */}
@@ -933,11 +927,13 @@ export function ModernSalesScreen() {
           ) : (
             <div className="space-y-2">
               {displayProducts.filter(p => p).map((product) => {
+                const productId = product.id ?? product._id;
                 const categoryImg = product.image || getCategoryImage(product.category, product.productType);
+                const isFavorite = (favoriteProducts || []).some(p => (p.id ?? p._id) === productId);
                 return (
                   <div
-                    key={product.id}
-                    onClick={() => handleProductClick(product.id)}
+                    key={productId}
+                    onClick={() => handleProductClick(productId)}
                     className="group bg-white rounded-xl p-3 cursor-pointer hover:shadow-lg transition-all border-2 border-gray-200 hover:border-orange-500 flex items-center gap-3"
                   >
                     {categoryImg ? (
@@ -973,7 +969,7 @@ export function ModernSalesScreen() {
                     </div>
                     <div className="text-right">
                       <div className="text-xl font-bold text-gray-900">
-                        {product.price.toLocaleString()}đ
+                        {(product.price || 0).toLocaleString()}đ
                       </div>
                       {product.productType !== 'service' && product.productType !== 'treatment' && (
                         <div className="text-sm text-gray-500">{product.stock} {t('inStock')}</div>
@@ -982,12 +978,12 @@ export function ModernSalesScreen() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleFavorite(product.id);
+                        toggleFavorite(productId);
                         playSound('beep');
                       }}
                       className="p-2 hover:bg-gray-100 rounded-lg transition-all"
                     >
-                      <Star className={`w-5 h-5 ${(favoriteProducts || []).some(p => p.id === product.id) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
+                      <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
                     </button>
                   </div>
                 );
@@ -1108,12 +1104,12 @@ export function ModernSalesScreen() {
             ) : (
               cart.map((item) => (
                 <div
-                  key={item.id}
-                  onClick={() => setSelectedCartItem(item.id)}
+                  key={item.id ?? item._id}
+                  onClick={() => setSelectedCartItem(item.id ?? item._id)}
                   className={`bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-2 sm:p-3 border-2 transition-all cursor-pointer ${
-                    selectedCartItem === item.id ? 'bg-orange-50 dark:bg-orange-900/20' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                    selectedCartItem === (item.id ?? item._id) ? 'bg-orange-50 dark:bg-orange-900/20' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
-                  style={selectedCartItem === item.id ? { borderColor: '#FE7410', backgroundColor: '#FFF7ED' } : {}}
+                  style={selectedCartItem === (item.id ?? item._id) ? { borderColor: '#FE7410', backgroundColor: '#FFF7ED' } : {}}
                 >
                   <div className="flex items-start gap-2 mb-2">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#FFEDD5' }}>
@@ -1130,7 +1126,7 @@ export function ModernSalesScreen() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeFromCart(item.id);
+                        removeFromCart(item.id ?? item._id);
                         playSound('beep');
                       }}
                       className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
@@ -1145,7 +1141,7 @@ export function ModernSalesScreen() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          updateCartQuantity(item.id, Math.max(1, item.quantity - 1));
+                          updateCartQuantity(item.id ?? item._id, Math.max(1, item.quantity - 1));
                           playSound('beep');
                         }}
                         className="w-7 h-7 sm:w-8 sm:h-8 bg-white dark:bg-gray-600 border-2 border-gray-300 dark:border-gray-500 rounded-lg flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-all"
@@ -1160,7 +1156,7 @@ export function ModernSalesScreen() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          updateCartQuantity(item.id, item.quantity + 1);
+                          updateCartQuantity(item.id ?? item._id, item.quantity + 1);
                           playSound('beep');
                         }}
                         className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-600 dark:bg-gray-700 rounded-lg flex items-center justify-center hover:shadow-lg transition-all"
@@ -1513,7 +1509,7 @@ export function ModernSalesScreen() {
               ) : (
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 space-y-4">
                   {cart.slice(-3).map((item) => (
-                    <div key={item.id} className="flex justify-between items-center text-left">
+                    <div key={item.id ?? item._id} className="flex justify-between items-center text-left">
                       <div className="flex-1">
                         <div className="font-semibold text-lg">{item.name}</div>
                         <div className="text-sm" style={{ color: '#FFEDD5' }}>{item.quantity} × {item.price.toLocaleString()}đ</div>
@@ -1878,12 +1874,12 @@ export function ModernSalesScreen() {
             ) : (
               cart.map((item) => (
                 <div
-                  key={item.id}
-                  onClick={() => setSelectedCartItem(item.id)}
+                  key={item.id ?? item._id}
+                  onClick={() => setSelectedCartItem(item.id ?? item._id)}
                   className={`bg-white dark:bg-gray-800 rounded-xl p-3 border-2 transition-all cursor-pointer ${
-                    selectedCartItem === item.id ? 'bg-orange-50 dark:bg-orange-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    selectedCartItem === (item.id ?? item._id) ? 'bg-orange-50 dark:bg-orange-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
-                  style={selectedCartItem === item.id ? { borderColor: '#FE7410', backgroundColor: '#FFF7ED' } : {}}
+                  style={selectedCartItem === (item.id ?? item._id) ? { borderColor: '#FE7410', backgroundColor: '#FFF7ED' } : {}}
                 >
                   <div className="flex items-start gap-3 mb-3">
                     <div className="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#FFEDD5' }}>
@@ -1900,7 +1896,7 @@ export function ModernSalesScreen() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeFromCart(item.id);
+                        removeFromCart(item.id ?? item._id);
                         playSound('beep');
                       }}
                       className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
@@ -1915,7 +1911,7 @@ export function ModernSalesScreen() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          updateCartQuantity(item.id, Math.max(1, item.quantity - 1));
+                          updateCartQuantity(item.id ?? item._id, Math.max(1, item.quantity - 1));
                           playSound('beep');
                         }}
                         className="w-10 h-10 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-all"
@@ -1930,7 +1926,7 @@ export function ModernSalesScreen() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          updateCartQuantity(item.id, item.quantity + 1);
+                          updateCartQuantity(item.id ?? item._id, item.quantity + 1);
                           playSound('beep');
                         }}
                         className="w-10 h-10 bg-gray-600 dark:bg-gray-700 rounded-lg flex items-center justify-center hover:shadow-lg transition-all"

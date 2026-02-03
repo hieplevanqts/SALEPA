@@ -38,8 +38,8 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterType, setFilterType] = useState<ProductType>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [sortField] = useState<SortField>('name');
+  const [sortOrder] = useState<SortOrder>('asc');
   const [syncing, setSyncing] = useState(false);
   
   // Delete confirmation states
@@ -437,19 +437,6 @@ export function ProductManagement({ userRole = 'admin' }: ProductManagementProps
         .reduce((sum, p) => sum + (p.duration || 0), 0) / 
       (products.filter(p => p.duration).length || 1)
     ),
-  };
-
-  const getProductTypeIcon = (type?: string) => {
-    switch (type || 'product') {
-      case 'service':
-        return <Sparkles className="w-4 h-4" />;
-      case 'treatment':
-        return <Zap className="w-4 h-4" />;
-      case 'combo':
-        return <Package className="w-4 h-4" />;
-      default:
-        return isFoodBeverage ? <UtensilsCrossed className="w-4 h-4" /> : <Package className="w-4 h-4" />;
-    }
   };
 
   const getProductTypeBadge = (type?: string) => {

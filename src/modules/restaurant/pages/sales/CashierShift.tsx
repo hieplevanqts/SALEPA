@@ -3,7 +3,7 @@ import { useStore } from '../../../../lib/restaurant-lib/store';
 import { useTranslation } from '../../../../lib/restaurant-lib/useTranslation';
 import { 
   Clock, DollarSign, TrendingUp, Package, 
-  PlayCircle, StopCircle, AlertCircle, CheckCircle 
+  PlayCircle, StopCircle, AlertCircle
 } from 'lucide-react';
 
 export function CashierShift() {
@@ -61,7 +61,7 @@ export function CashierShift() {
       return;
     }
 
-    closeShift(currentShift.id, cash, shiftNote);
+    closeShift(cash, 'Cashier', shiftNote);
     setShowCloseModal(false);
     setClosingCash('');
     setShiftNote('');

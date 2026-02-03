@@ -344,7 +344,6 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
         }
 
         // Parse data
-        const headers = jsonData[0];
         const rows = jsonData.slice(1);
         const errors: string[] = [];
         const previewData: any[] = [];
@@ -447,7 +446,6 @@ export default function ProductManagement({ userRole = 'admin' }: ProductManagem
   };
 
   const resetImportModal = () => {
-    setImportFile(null);
     setImportPreviewData([]);
     setImportErrors([]);
     setImportStep('upload');

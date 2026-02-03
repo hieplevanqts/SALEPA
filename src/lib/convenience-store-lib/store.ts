@@ -27,6 +27,7 @@ export interface Product {
   brief?: string;
   content?: string;
   price: number;
+  cost_price?: number;
   prices?: any; // jsonb - for multiple price types
   quantity: number;
   waiting_quantity?: number;
@@ -123,6 +124,7 @@ export interface Order {
     | "zalopay"
     | "vnpay";
   paymentMethods?: { method: string; amount: number }[]; // For split payment
+  customerId?: string;
   customerName?: string;
   customerPhone?: string;
   note?: string;
